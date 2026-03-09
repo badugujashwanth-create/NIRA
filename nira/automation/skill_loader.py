@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 
 class SkillAutoLoader:
-    def __init__(self, package: str = "nira_agent.skills") -> None:
+    def __init__(self, package: str = "nira.skills") -> None:
         self.package = package
         self.loaded_modules: list[str] = []
 
@@ -38,4 +38,3 @@ class SkillAutoLoader:
         register_fn = getattr(module, "register", None)
         if callable(register_fn):
             register_fn(registry, executors)
-

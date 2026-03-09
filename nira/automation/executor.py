@@ -3,10 +3,10 @@ from __future__ import annotations
 import logging
 from typing import Callable
 
-from nira_agent.automation.models import ToolCall, ToolResult
-from nira_agent.automation.permissions import DESTRUCTIVE, PermissionManager
-from nira_agent.automation.tool_registry import ToolRegistry
-from nira_agent.automation.undo import UndoStack
+from nira.automation.models import ToolCall, ToolResult
+from nira.automation.permissions import DESTRUCTIVE, PermissionManager
+from nira.automation.tool_registry import ToolRegistry
+from nira.automation.undo import UndoStack
 
 
 logger = logging.getLogger(__name__)

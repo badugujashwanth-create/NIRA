@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from nira_agent.automation.permissions import DESTRUCTIVE, STANDARD
-from nira_agent.automation.tool_registry import ToolSpec
-from nira_agent.skills.base import register_specs
+from nira.automation.permissions import DESTRUCTIVE, STANDARD
+from nira.automation.tool_registry import ToolSpec
+from nira.skills.base import register_specs
 
 
 def register(registry, executors) -> None:

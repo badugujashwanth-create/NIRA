@@ -2,23 +2,24 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
+from typing import Callable
 
-from nira_agent.ai.structured_output import StructuredModelOutput
-from nira_agent.automation.builtins import BuiltinExecutors
-from nira_agent.automation.executor import ToolExecutionEngine
-from nira_agent.automation.models import ToolCall, ToolResult
-from nira_agent.automation.permissions import PermissionManager
-from nira_agent.automation.skill_loader import SkillAutoLoader
-from nira_agent.automation.tool_registry import ToolRegistry
-from nira_agent.automation.undo import UndoStack
-from nira_agent.automation.workflow_dsl import WorkflowDSLParser, WorkflowRunner
+from nira.ai.structured_output import StructuredModelOutput
+from nira.automation.builtins import BuiltinExecutors
+from nira.automation.executor import ToolExecutionEngine
+from nira.automation.models import ToolCall, ToolResult
+from nira.automation.permissions import PermissionManager
+from nira.automation.skill_loader import SkillAutoLoader
+from nira.automation.tool_registry import ToolRegistry
+from nira.automation.undo import UndoStack
+from nira.automation.workflow_dsl import WorkflowDSLParser, WorkflowRunner
 
 
 logger = logging.getLogger(__name__)
 
 
 class AutomationManager:
-    def __init__(self, permission_level: str, confirm_fn) -> None:
+    def __init__(self, permission_level: str, confirm_fn: Callable[[ToolCall], bool]) -> None:
         self.registry = ToolRegistry()
         self.undo_stack = UndoStack()
         self.permission_manager = PermissionManager(permission_level)
@@ -65,7 +66,7 @@ class AutomationManager:
         return self.undo_stack.undo_last()
 
     def tool_feedback_text(self, results: list[ToolResult]) -> str:
-        lines = []
+        lines: list[str] = []
         for idx, result in enumerate(results, start=1):
             status = "ok" if result.ok else "error"
             lines.append(f"[{idx}] {status}: {result.output}")

@@ -23,6 +23,9 @@ class LlamaCppConnector:
         self._session = requests.Session()
         self._mode: Optional[str] = None
 
+    def close(self) -> None:
+        self._session.close()
+
     def generate(self, prompt: str) -> LLMResult:
         if self._mode == "chat":
             result = self._chat_completion(prompt)
@@ -61,8 +64,10 @@ class LlamaCppConnector:
             response = self._session.post(url, json=payload, timeout=self.timeout_sec)
             response.raise_for_status()
             data = response.json()
+            choices = data.get("choices") or []
+            first_choice = choices[0] if isinstance(choices, list) and choices else {}
             text = (
-                data.get("choices", [{}])[0]
+                first_choice
                 .get("message", {})
                 .get("content", "")
                 .strip()
@@ -81,11 +86,12 @@ class LlamaCppConnector:
             response = self._session.post(url, json=payload, timeout=self.timeout_sec)
             response.raise_for_status()
             data = response.json()
-            text = data.get("content") or data.get("choices", [{}])[0].get("text", "")
+            choices = data.get("choices") or []
+            first_choice = choices[0] if isinstance(choices, list) and choices else {}
+            text = data.get("content") or first_choice.get("text", "")
             text = str(text).strip()
             if not text:
                 return LLMResult(False, "Empty response from /completion", "llama.cpp")
             return LLMResult(True, text, "llama.cpp")
         except Exception as exc:
             return LLMResult(False, str(exc), "llama.cpp")
-

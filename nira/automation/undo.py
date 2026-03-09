@@ -3,7 +3,7 @@ from __future__ import annotations
 import threading
 from collections import deque
 
-from nira_agent.automation.models import ExecutedAction, ToolResult
+from nira.automation.models import ExecutedAction, ToolResult
 
 
 class UndoStack:
@@ -23,4 +23,3 @@ class UndoStack:
         if not action.undoable or not action.undo_fn:
             return ToolResult(False, f"Action is not undoable: {action.description}")
         return action.undo_fn()
-

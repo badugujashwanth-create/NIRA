@@ -23,81 +23,107 @@ def _parse_int(value: Any, default: int) -> int:
 
 
 @dataclass
-class AgentConfig:
-    local_llm_base_url: str = "http://127.0.0.1:8080"
-    local_llm_timeout_sec: int = 420
-    local_llm_model: str | None = None
-    cloud_fallback_enabled: bool = False
-    cloud_endpoint: str | None = None
-    cloud_api_key: str | None = None
-    cloud_timeout_sec: int = 45
-    escalation_threshold: float = 0.42
-    manual_cloud_escalation_only: bool = True
-    route_cache_ttl_sec: int = 300
-    route_cache_max_items: int = 512
-    permission_default: str = "standard"
-    passphrase_required: bool = True
-    passphrase_env: str = "NIRA_PASSPHRASE"
-    encrypt_key_env: str = "NIRA_ENCRYPTION_KEY"
-    max_context_chars: int = 12000
-    max_history_turns: int = 14
-    compress_every_n_turns: int = 6
-    memory_compress_token_threshold: int = 900
-    proactive_cooldown_sec: int = 300
-    proactive_enabled: bool = True
-    inference_cooldown_ms: int = 250
-    cpu_throttle_ms: int = 40
-    llm_route_timeout_sec: int = 420
-    route_context_chars: int = 320
-    clarification_threshold: float = 0.33
-    max_tool_replans: int = 1
-    monitor_interval_sec: int = 5
-    skills_dir: str = "skills"
-    dsl_workflow_file: str = "workflows.dsl"
-    sql_enabled: bool = True
-    db_host: str = "localhost"
-    db_port: int = 3306
-    db_user: str = "root"
-    db_password: str = ""
-    db_name: str = "nira_agent"
-    distraction_apps: list[str] = field(default_factory=lambda: ["chrome.exe", "msedge.exe", "firefox.exe"])
+class NiraConfig:
+    base_dir: Path = field(default_factory=lambda: Path.home() / ".nira")
+    llama_base_url: str = "http://127.0.0.1:8080"
+    llama_model: str | None = None
+    planner_model: str | None = None
+    coding_model: str | None = None
+    fast_model: str | None = None
+    research_model: str | None = None
+    embedding_model: str | None = None
+    model_overrides_json: str = ""
+    llama_timeout_sec: int = 15
+    manage_llama_server: bool = False
+    llama_dir: str | None = None
+    llama_model_path: str | None = None
+    web_research_enabled: bool = False
+    max_short_term_turns: int = 18
+    max_vector_hits: int = 5
+    workflow_detection_threshold: int = 2
+    build_timeout_sec: int = 180
+    enable_voice: bool = False
+    enable_overlay: bool = False
+    enable_notifications: bool = True
+    startup_timeout_sec: int = 120
+    model_max_tokens: int = 512
+    max_context_chars: int = 4800
+    max_cached_models: int = 3
+    model_idle_ttl_sec: int = 900
+
+    database_path: Path = field(init=False)
+    logs_dir: Path = field(init=False)
+    documents_dir: Path = field(init=False)
+    research_dir: Path = field(init=False)
+    training_dir: Path = field(init=False)
+    artifacts_dir: Path = field(init=False)
+    vector_store_path: Path = field(init=False)
+    workflow_store_path: Path = field(init=False)
+
+    def __post_init__(self) -> None:
+        self.base_dir = Path(self.base_dir).expanduser()
+        self.database_path = self.base_dir / "runtime.db"
+        self.logs_dir = self.base_dir / "logs"
+        self.documents_dir = self.base_dir / "documents"
+        self.research_dir = self.base_dir / "research"
+        self.training_dir = self.base_dir / "training"
+        self.artifacts_dir = self.base_dir / "artifacts"
+        self.vector_store_path = self.base_dir / "vector_store.json"
+        self.workflow_store_path = self.base_dir / "workflows.json"
+        self.ensure_directories()
+
+    @property
+    def local_llm_base_url(self) -> str:
+        return self.llama_base_url
+
+    @property
+    def local_llm_model(self) -> str | None:
+        return self.llama_model
+
+    @property
+    def local_llm_timeout_sec(self) -> int:
+        return self.llama_timeout_sec
 
     def ensure_directories(self) -> None:
-        storage = Path.home() / ".nira_agent"
-        (storage / "logs").mkdir(parents=True, exist_ok=True)
-        (storage / "memory").mkdir(parents=True, exist_ok=True)
-        (storage / "security").mkdir(parents=True, exist_ok=True)
+        for path in (
+            self.base_dir,
+            self.logs_dir,
+            self.documents_dir,
+            self.research_dir,
+            self.training_dir,
+            self.artifacts_dir,
+        ):
+            path.mkdir(parents=True, exist_ok=True)
 
-    def db_settings(self) -> dict[str, object]:
-        return {
-            "host": self.db_host,
-            "port": self.db_port,
-            "user": self.db_user,
-            "password": self.db_password,
-            "database": self.db_name,
-        }
+
+AgentConfig = NiraConfig
 
 
 class ConfigLoader:
     def __init__(self, path: Path | None = None) -> None:
-        self.path = path or (Path.home() / ".nira_agent" / "config.json")
+        base_dir = Path.home() / ".nira"
+        self.path = path or (base_dir / "config.json")
         self.path.parent.mkdir(parents=True, exist_ok=True)
 
-    def load(self) -> AgentConfig:
+    def load(self) -> NiraConfig:
         user = self._read_user()
-        cfg = AgentConfig()
-        env_map = {
-            "db_host": "DB_HOST",
-            "db_port": "DB_PORT",
-            "db_user": "DB_USER",
-            "db_password": "DB_PASSWORD",
-            "db_name": "DB_NAME",
-        }
+        cfg = NiraConfig()
         for key, default_value in cfg.__dict__.items():
-            env_key = env_map.get(key, f"NIRA_{key.upper()}")
+            if key in {
+                "database_path",
+                "logs_dir",
+                "documents_dir",
+                "research_dir",
+                "training_dir",
+                "artifacts_dir",
+                "vector_store_path",
+                "workflow_store_path",
+            }:
+                continue
+            env_key = f"NIRA_{key.upper()}"
             value = os.getenv(env_key, user.get(key, default_value))
             setattr(cfg, key, self._coerce(default_value, value))
-        cfg.ensure_directories()
+        cfg.__post_init__()
         return cfg
 
     def _read_user(self) -> dict[str, Any]:
@@ -105,7 +131,14 @@ class ConfigLoader:
             return {}
         try:
             return json.loads(self.path.read_text(encoding="utf-8"))
-        except (OSError, json.JSONDecodeError):
+        except json.JSONDecodeError:
+            backup = self.path.with_suffix(f"{self.path.suffix}.invalid.bak")
+            try:
+                backup.write_text(self.path.read_text(encoding="utf-8", errors="ignore"), encoding="utf-8")
+            except OSError:
+                return {}
+            return {}
+        except OSError:
             return {}
 
     def _coerce(self, default: Any, value: Any) -> Any:
@@ -113,15 +146,6 @@ class ConfigLoader:
             return _parse_bool(value, default)
         if isinstance(default, int):
             return _parse_int(value, default)
-        if isinstance(default, float):
-            try:
-                return float(value)
-            except (TypeError, ValueError):
-                return default
-        if isinstance(default, list):
-            if isinstance(value, list):
-                return value
-            if not value:
-                return default
-            return [x.strip() for x in str(value).split(",") if x.strip()]
+        if isinstance(default, Path):
+            return Path(value)
         return value if value is not None else default

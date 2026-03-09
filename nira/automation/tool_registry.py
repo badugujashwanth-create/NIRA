@@ -4,8 +4,8 @@ import threading
 from dataclasses import dataclass, field
 from typing import Any, Callable
 
-from nira_agent.automation.models import ExecutedAction, ToolCall, ToolResult
-from nira_agent.automation.permissions import PermissionLevel, READ_ONLY
+from nira.automation.models import ExecutedAction, ToolCall, ToolResult
+from nira.automation.permissions import PermissionLevel, READ_ONLY
 
 
 ToolExecutor = Callable[[dict[str, Any]], tuple[ToolResult, ExecutedAction | None]]

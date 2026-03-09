@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import re
 
-from nira_agent.automation.models import ToolResult
-from nira_agent.ai.structured_output import StructuredModelOutput
+from nira.ai.structured_output import StructuredModelOutput
+from nira.automation.models import ToolResult
 
 
 class ConfidenceScorer:

@@ -2,8 +2,9 @@ from __future__ import annotations
 
 import shlex
 from dataclasses import dataclass, field
+from typing import Callable
 
-from nira_agent.automation.models import ToolCall, ToolResult
+from nira.automation.models import ToolCall, ToolResult
 
 
 @dataclass
@@ -116,7 +117,7 @@ class WorkflowRunner:
         self.workflows = parsed.workflows
         return ToolResult(True, f"Loaded {len(self.workflows)} workflows.")
 
-    def run(self, name: str, execute_step) -> ToolResult:
+    def run(self, name: str, execute_step: Callable[[ToolCall], ToolResult]) -> ToolResult:
         wf = self.workflows.get(name.lower())
         if not wf:
             return ToolResult(False, f"Workflow '{name}' not found.")
@@ -125,4 +126,3 @@ class WorkflowRunner:
             if not step_result.ok:
                 return ToolResult(False, f"Workflow '{name}' failed at {step.tool}: {step_result.output}")
         return ToolResult(True, f"Workflow '{name}' completed ({len(wf.steps)} steps).")
-

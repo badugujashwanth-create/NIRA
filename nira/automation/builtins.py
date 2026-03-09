@@ -1,35 +1,47 @@
 from __future__ import annotations
 
 import logging
-import os
+import shlex
 import shutil
 import subprocess
 import webbrowser
 from pathlib import Path
-from typing import Callable
+from typing import Callable, Protocol, cast
 
 import psutil
 
-from nira_agent.automation.models import ExecutedAction, ToolResult
+from nira.automation.models import ExecutedAction, ToolResult
+from nira.core.path_utils import PathSecurityError, resolve_within_root, validate_public_http_url
 
 
 logger = logging.getLogger(__name__)
 
+ToolArgs = dict[str, object]
+ExecutorResult = tuple[ToolResult, ExecutedAction | None]
+WorkflowRunner = Callable[[str], ToolResult]
+
+
+class _TesseractLike(Protocol):
+    def image_to_string(self, image: object) -> str: ...
+
 
 class BuiltinExecutors:
     def __init__(self) -> None:
-        self._workflow_runner: Callable[[str], ToolResult] | None = None
+        self._workflow_runner: WorkflowRunner | None = None
 
-    def set_workflow_runner(self, runner: Callable[[str], ToolResult]) -> None:
+    def set_workflow_runner(self, runner: WorkflowRunner) -> None:
         self._workflow_runner = runner
 
-    def open_app(self, args: dict[str, object]) -> tuple[ToolResult, ExecutedAction | None]:
+    def open_app(self, args: ToolArgs) -> ExecutorResult:
         target = str(args.get("target", "")).strip().strip('"')
         if not target:
             return ToolResult(False, "Missing app target."), None
         try:
-            proc = subprocess.Popen(target, shell=True)
-        except Exception as exc:
+            command = shlex.split(target, posix=False)
+            if not command:
+                return ToolResult(False, "Missing app target."), None
+            proc = subprocess.Popen(command, shell=False)
+        except (ValueError, OSError) as exc:
             return ToolResult(False, f"Failed to open app '{target}': {exc}"), None
 
         pid = proc.pid
@@ -43,14 +55,14 @@ class BuiltinExecutors:
             except Exception as exc:  # pragma: no cover - runtime dependent
                 return ToolResult(False, f"Failed undo for PID {pid}: {exc}")
 
-        action = ExecutedAction(
+        action: ExecutedAction = ExecutedAction(
             description=f"open_app:{target}",
             undoable=True,
             undo_fn=_undo,
         )
         return ToolResult(True, f"Opened {target}."), action
 
-    def close_app(self, args: dict[str, object]) -> tuple[ToolResult, ExecutedAction | None]:
+    def close_app(self, args: ToolArgs) -> ExecutorResult:
         process_name = str(args.get("process_name", "")).strip().lower().replace(".exe", "")
         if not process_name:
             return ToolResult(False, "Missing process_name."), None
@@ -59,7 +71,10 @@ class BuiltinExecutors:
             try:
                 name = (proc.info.get("name") or "").lower().replace(".exe", "")
                 if process_name in name:
-                    psutil.Process(proc.info["pid"]).terminate()
+                    pid = proc.info.get("pid")
+                    if not isinstance(pid, int):
+                        continue
+                    psutil.Process(pid).terminate()
                     killed += 1
             except Exception:
                 continue
@@ -71,10 +86,14 @@ class BuiltinExecutors:
             undo_fn=None,
         )
 
-    def create_folder(self, args: dict[str, object]) -> tuple[ToolResult, ExecutedAction | None]:
-        folder = Path(str(args.get("path", "")).strip('"')).expanduser()
-        if not str(folder):
+    def create_folder(self, args: ToolArgs) -> ExecutorResult:
+        raw_path = str(args.get("path", "")).strip().strip('"')
+        if not raw_path:
             return ToolResult(False, "Missing path."), None
+        try:
+            folder = resolve_within_root(Path.cwd(), raw_path)
+        except (PathSecurityError, OSError) as exc:
+            return ToolResult(False, f"Invalid folder path: {exc}"), None
         try:
             folder.mkdir(parents=True, exist_ok=False)
         except FileExistsError:
@@ -97,11 +116,12 @@ class BuiltinExecutors:
             undo_fn=_undo,
         )
 
-    def move_file(self, args: dict[str, object]) -> tuple[ToolResult, ExecutedAction | None]:
-        src = Path(str(args.get("src", "")).strip('"')).expanduser()
-        dst = Path(str(args.get("dst", "")).strip('"')).expanduser()
-        if not src.exists():
-            return ToolResult(False, f"Source not found: {src}"), None
+    def move_file(self, args: ToolArgs) -> ExecutorResult:
+        try:
+            src = resolve_within_root(Path.cwd(), str(args.get("src", "")).strip('"'), must_exist=True)
+            dst = resolve_within_root(Path.cwd(), str(args.get("dst", "")).strip('"'))
+        except (PathSecurityError, FileNotFoundError, OSError) as exc:
+            return ToolResult(False, f"Invalid move paths: {exc}"), None
         dst.parent.mkdir(parents=True, exist_ok=True)
         try:
             moved = Path(shutil.move(str(src), str(dst)))
@@ -121,10 +141,11 @@ class BuiltinExecutors:
             undo_fn=_undo,
         )
 
-    def delete_file(self, args: dict[str, object]) -> tuple[ToolResult, ExecutedAction | None]:
-        path = Path(str(args.get("path", "")).strip('"')).expanduser()
-        if not path.exists():
-            return ToolResult(False, f"File not found: {path}"), None
+    def delete_file(self, args: ToolArgs) -> ExecutorResult:
+        try:
+            path = resolve_within_root(Path.cwd(), str(args.get("path", "")).strip('"'), must_exist=True)
+        except (PathSecurityError, FileNotFoundError, OSError) as exc:
+            return ToolResult(False, f"File not found: {exc}"), None
         try:
             if path.is_dir():
                 shutil.rmtree(path)
@@ -138,18 +159,20 @@ class BuiltinExecutors:
         except Exception as exc:
             return ToolResult(False, f"Delete failed: {exc}"), None
 
-    def open_url(self, args: dict[str, object]) -> tuple[ToolResult, ExecutedAction | None]:
+    def open_url(self, args: ToolArgs) -> ExecutorResult:
         url = str(args.get("url", "")).strip()
-        if not url.startswith(("http://", "https://")):
-            return ToolResult(False, "URL must start with http:// or https://"), None
         try:
-            webbrowser.open(url)
-            return ToolResult(True, f"Opened URL: {url}"), None
+            safe_url = validate_public_http_url(url)
+            webbrowser.open(safe_url)
+            return ToolResult(True, f"Opened URL: {safe_url}"), None
         except Exception as exc:
             return ToolResult(False, f"Browser open failed: {exc}"), None
 
-    def take_screenshot(self, args: dict[str, object]) -> tuple[ToolResult, ExecutedAction | None]:
-        output = Path(str(args.get("path", "screenshot.png"))).expanduser()
+    def take_screenshot(self, args: ToolArgs) -> ExecutorResult:
+        try:
+            output = resolve_within_root(Path.cwd(), str(args.get("path", "screenshot.png")))
+        except (PathSecurityError, OSError) as exc:
+            return ToolResult(False, f"Invalid screenshot path: {exc}"), None
         output.parent.mkdir(parents=True, exist_ok=True)
         try:
             from PIL import ImageGrab  # type: ignore
@@ -160,35 +183,39 @@ class BuiltinExecutors:
         except Exception as exc:
             return ToolResult(False, f"Screenshot failed (install pillow): {exc}"), None
 
-    def ocr_image(self, args: dict[str, object]) -> tuple[ToolResult, ExecutedAction | None]:
-        path = Path(str(args.get("path", ""))).expanduser()
-        if not path.exists():
-            return ToolResult(False, f"Image not found: {path}"), None
+    def ocr_image(self, args: ToolArgs) -> ExecutorResult:
+        try:
+            path = resolve_within_root(Path.cwd(), str(args.get("path", "")), must_exist=True)
+        except (PathSecurityError, FileNotFoundError, OSError) as exc:
+            return ToolResult(False, f"Image not found: {exc}"), None
         try:
             import pytesseract  # type: ignore
             from PIL import Image  # type: ignore
 
-            text = pytesseract.image_to_string(Image.open(path))
-            text = text.strip()
+            tesseract = cast(_TesseractLike, pytesseract)
+            image = cast(object, Image.open(path))
+            text = tesseract.image_to_string(image).strip()
             if not text:
                 return ToolResult(False, "OCR completed but no text recognized."), None
             return ToolResult(True, text, {"text": text}), None
         except Exception as exc:
             return ToolResult(False, f"OCR failed (install pillow + pytesseract + Tesseract OCR): {exc}"), None
 
-    def run_workflow(self, args: dict[str, object]) -> tuple[ToolResult, ExecutedAction | None]:
+    def run_workflow(self, args: ToolArgs) -> ExecutorResult:
         name = str(args.get("name", "")).strip()
         if not name:
             return ToolResult(False, "Missing workflow name."), None
-        if not self._workflow_runner:
+        runner = self._workflow_runner
+        if runner is None:
             return ToolResult(False, "Workflow runner is not configured."), None
-        result = self._workflow_runner(name)
+        result: ToolResult = runner(name)
         return result, None
 
-    def read_file(self, args: dict[str, object]) -> tuple[ToolResult, ExecutedAction | None]:
-        path = Path(str(args.get("path", ""))).expanduser()
-        if not path.exists():
-            return ToolResult(False, f"File not found: {path}"), None
+    def read_file(self, args: ToolArgs) -> ExecutorResult:
+        try:
+            path = resolve_within_root(Path.cwd(), str(args.get("path", "")), must_exist=True)
+        except (PathSecurityError, FileNotFoundError, OSError) as exc:
+            return ToolResult(False, f"File not found: {exc}"), None
         try:
             text = path.read_text(encoding="utf-8", errors="ignore")
             if len(text) > 8000:
@@ -197,13 +224,17 @@ class BuiltinExecutors:
         except Exception as exc:
             return ToolResult(False, f"Read failed: {exc}"), None
 
-    def write_file(self, args: dict[str, object]) -> tuple[ToolResult, ExecutedAction | None]:
-        path = Path(str(args.get("path", ""))).expanduser()
-        content = str(args.get("content", ""))
-        if not path:
+    def write_file(self, args: ToolArgs) -> ExecutorResult:
+        raw_path = str(args.get("path", "")).strip()
+        if not raw_path:
             return ToolResult(False, "Missing file path."), None
+        try:
+            path = resolve_within_root(Path.cwd(), raw_path)
+        except (PathSecurityError, OSError) as exc:
+            return ToolResult(False, f"Invalid file path: {exc}"), None
+        content = str(args.get("content", ""))
         path.parent.mkdir(parents=True, exist_ok=True)
-        previous = path.read_text(encoding="utf-8", errors="ignore") if path.exists() else None
+        previous: str | None = path.read_text(encoding="utf-8", errors="ignore") if path.exists() else None
         try:
             path.write_text(content, encoding="utf-8")
         except Exception as exc:
@@ -226,14 +257,16 @@ class BuiltinExecutors:
             undo_fn=_undo,
         )
 
-    def list_directory(self, args: dict[str, object]) -> tuple[ToolResult, ExecutedAction | None]:
-        path = Path(str(args.get("path", "."))).expanduser()
-        if not path.exists() or not path.is_dir():
+    def list_directory(self, args: ToolArgs) -> ExecutorResult:
+        try:
+            path = resolve_within_root(Path.cwd(), str(args.get("path", ".")), must_exist=True)
+        except (PathSecurityError, FileNotFoundError, OSError) as exc:
+            return ToolResult(False, f"Directory not found: {exc}"), None
+        if not path.is_dir():
             return ToolResult(False, f"Directory not found: {path}"), None
         try:
-            entries = [item.name for item in path.iterdir()]
+            entries: list[str] = [item.name for item in path.iterdir()]
             preview = "\n".join(entries[:200])
             return ToolResult(True, preview or "(empty)", {"count": len(entries)}), None
         except Exception as exc:
             return ToolResult(False, f"List directory failed: {exc}"), None
-

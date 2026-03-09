@@ -33,6 +33,9 @@ class LocalLlamaClient:
         self.max_tokens = max(32, int(max_tokens))
         self._session = requests.Session()
 
+    def close(self) -> None:
+        self._session.close()
+
     def generate(self, system_prompt: str, user_prompt: str) -> LLMTextResult:
         # Prefer OpenAI-compatible route, fallback to /completion.
         chat_result = self._chat(system_prompt, user_prompt)
@@ -67,8 +70,10 @@ class LocalLlamaClient:
             response = self._session.post(url, json=payload, timeout=self._request_timeout)
             response.raise_for_status()
             data = response.json()
+            choices = data.get("choices") or []
+            first_choice = choices[0] if isinstance(choices, list) and choices else {}
             text = (
-                data.get("choices", [{}])[0]
+                first_choice
                 .get("message", {})
                 .get("content", "")
                 .strip()
@@ -93,7 +98,9 @@ class LocalLlamaClient:
             response = self._session.post(url, json=payload, timeout=self._request_timeout)
             response.raise_for_status()
             data = response.json()
-            text = (data.get("content") or data.get("choices", [{}])[0].get("text", "")).strip()
+            choices = data.get("choices") or []
+            first_choice = choices[0] if isinstance(choices, list) and choices else {}
+            text = str(data.get("content") or first_choice.get("text", "")).strip()
             if not text:
                 return LLMTextResult(False, "", "local", "Empty completion response.")
             return LLMTextResult(True, text, "local")
@@ -110,6 +117,9 @@ class CloudFallbackClient:
         self.timeout_sec = timeout_sec
         self._request_timeout = (5, timeout_sec)
         self._session = requests.Session()
+
+    def close(self) -> None:
+        self._session.close()
 
     def is_configured(self) -> bool:
         return bool(self.endpoint and self.api_key)
@@ -135,8 +145,10 @@ class CloudFallbackClient:
             )
             response.raise_for_status()
             data = response.json()
+            choices = data.get("choices") or []
+            first_choice = choices[0] if isinstance(choices, list) and choices else {}
             text = (
-                data.get("choices", [{}])[0]
+                first_choice
                 .get("message", {})
                 .get("content", "")
                 .strip()

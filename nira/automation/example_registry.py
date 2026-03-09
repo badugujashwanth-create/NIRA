@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from nira_agent.automation.builtins import BuiltinExecutors
-from nira_agent.automation.permissions import STANDARD
-from nira_agent.automation.tool_registry import ToolRegistry, ToolSpec
+from nira.automation.builtins import BuiltinExecutors
+from nira.automation.permissions import STANDARD
+from nira.automation.tool_registry import ToolRegistry, ToolSpec
 
 
 def build_example_tool_registry() -> ToolRegistry:

@@ -1,0 +1,12 @@
+[project]
+name = "nira-local-runtime"
+version = "0.1.0"
+description = "Local-first modular AI agent runtime for NIRA"
+requires-python = ">=3.11"
+dependencies = [
+  "requests>=2.32.0",
+  "psutil>=5.9.8",
+]
+
+[tool.setuptools]
+packages = ["nira", "nira.core", "nira.intelligence", "nira.task_graph", "nira.agents", "nira.tools", "nira.memory", "nira.workflows", "nira.research", "nira.documents", "nira.monitoring", "nira.interface", "nira.models", "nira.training"]
