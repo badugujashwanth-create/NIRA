@@ -1,0 +1,98 @@
+data_dir: .nira_data
+
+runtime:
+  ram_limit_mb: 12000
+  cpu_only: true
+  default_context_window: 512
+  max_final_context_tokens: 400
+  ollama_base_url: http://127.0.0.1:11434
+  llama_cpp_base_url: http://127.0.0.1:8080
+  inference_timeout_sec: 180
+
+workers:
+  redis_url: redis://127.0.0.1:6379/0
+  inference_concurrency: 1
+  retrieval_concurrency: 4
+  browser_concurrency: 2
+  compression_concurrency: 1
+  queue_timeout_sec: 30
+  task_timeout_sec: 120
+  queue_max_depth: 128
+
+memory:
+  working_max_items: 128
+  working_ttl_sec: 3600
+  episodic_ttl_days: 30
+  archive_after_days: 14
+  semantic_top_k: 8
+  decay_half_life_days: 14
+  min_importance: 0.05
+
+tools:
+  workspace_root: .
+  sandbox_root: .nira_sandbox
+  docker_enabled: false
+  command_timeout_sec: 30
+  allowed_commands:
+    - python
+    - python3
+    - pytest
+    - git
+    - rg
+    - ls
+    - cat
+    - pwd
+
+models:
+  primary_coding:
+    alias: primary_coding
+    name: qwen2.5-coder:7b-gguf-q4_k_m
+    provider: ollama
+    role: coding
+    quantization: q4_k_m
+    context_window: 512
+    heavy: true
+    keep_alive: 0s
+    temperature: 0.2
+    num_predict: 384
+  fast:
+    alias: fast
+    name: phi:3
+    provider: ollama
+    role: classification
+    quantization: q4_k_m
+    context_window: 512
+    heavy: false
+    keep_alive: 0s
+    temperature: 0.1
+    num_predict: 160
+  compression:
+    alias: compression
+    name: phi:3
+    provider: ollama
+    role: compression
+    quantization: q4_k_m
+    context_window: 512
+    heavy: false
+    keep_alive: 0s
+    temperature: 0.0
+    num_predict: 220
+  future_reasoning:
+    alias: future_reasoning
+    name: qwen2.5:14b-gguf-q4_k_m
+    provider: ollama
+    role: deep_reasoning
+    quantization: q4_k_m
+    context_window: 512
+    heavy: true
+    keep_alive: 0s
+    temperature: 0.2
+    num_predict: 512
+
+routing:
+  coding: primary_coding
+  classification: fast
+  compression: compression
+  retrieval: fast
+  deep_reasoning: future_reasoning
+  general: fast

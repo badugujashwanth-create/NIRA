@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import sys
-import uuid
 from pathlib import Path
 
 import pytest
@@ -13,9 +12,5 @@ if str(ROOT) not in sys.path:
 
 
 @pytest.fixture
-def workspace_tmp_path() -> Path:
-    base = ROOT / ".pytest-tmp"
-    base.mkdir(parents=True, exist_ok=True)
-    path = base / uuid.uuid4().hex
-    path.mkdir(parents=True, exist_ok=True)
-    return path
+def tmp_data_dir(tmp_path: Path) -> Path:
+    return tmp_path / "data"

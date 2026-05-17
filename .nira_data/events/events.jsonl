@@ -1,0 +1,4 @@
+{"id": "ebfd1680f472425c8426f2a9c2083c0e", "payload": {"active": 0, "concurrency": 1, "pool": "inference", "status": "running"}, "timestamp": 1779045926.0318344, "trace_id": null, "type": "worker.updated"}
+{"id": "818b9d28dc1d4b5e97640a4455da5814", "payload": {"active": 0, "concurrency": 4, "pool": "retrieval", "status": "running"}, "timestamp": 1779045926.0331633, "trace_id": null, "type": "worker.updated"}
+{"id": "e9ad0a1ee126418189eb80ef8aaa8143", "payload": {"active": 0, "concurrency": 2, "pool": "browser", "status": "running"}, "timestamp": 1779045926.0342045, "trace_id": null, "type": "worker.updated"}
+{"id": "3d6ee7a23a7f4537aec5433b8c65269b", "payload": {"active": 0, "concurrency": 1, "pool": "compression", "status": "running"}, "timestamp": 1779045926.0352378, "trace_id": null, "type": "worker.updated"}

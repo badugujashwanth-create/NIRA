@@ -1,0 +1,16 @@
+{"name": "startup.check", "payload": {"details": "available", "name": "python:fastapi", "ok": true, "required": true}, "timestamp": 1779045926.0127256}
+{"name": "startup.check", "payload": {"details": "available", "name": "python:uvicorn", "ok": true, "required": true}, "timestamp": 1779045926.0143614}
+{"name": "startup.check", "payload": {"details": "available", "name": "python:httpx", "ok": true, "required": true}, "timestamp": 1779045926.015598}
+{"name": "startup.check", "payload": {"details": "available", "name": "python:chromadb", "ok": true, "required": false}, "timestamp": 1779045926.0166764}
+{"name": "startup.check", "payload": {"details": "available", "name": "python:playwright", "ok": true, "required": false}, "timestamp": 1779045926.0179274}
+{"name": "startup.check", "payload": {"details": "missing package: faster_whisper", "name": "python:faster_whisper", "ok": false, "required": false}, "timestamp": 1779045926.019759}
+{"name": "startup.check", "payload": {"details": "data and sandbox paths are writable", "name": "local_paths", "ok": true, "required": true}, "timestamp": 1779045926.0206559}
+{"name": "startup.check", "payload": {"details": "reachable; missing models: phi:3, qwen2.5-coder:7b-gguf-q4_k_m, qwen2.5:14b-gguf-q4_k_m", "name": "ollama", "ok": true, "required": false}, "timestamp": 1779045926.021611}
+{"name": "startup.check", "payload": {"details": "using in-memory queue fallback: Error 22 connecting to 127.0.0.1:6379. The remote computer refused the network connection.", "name": "redis", "ok": false, "required": false}, "timestamp": 1779045926.022504}
+{"name": "memory.maintenance", "payload": {"archived": 0, "deleted": 0, "health": {"active": 0, "archived": 0, "duplicate_hashes": 0, "fragmentation": 0.0, "pinned": 0, "total": 0}}, "timestamp": 1779045926.0300417}
+{"name": "worker_pool.start", "payload": {"concurrency": 1, "name": "inference"}, "timestamp": 1779045926.031866}
+{"name": "worker_pool.start", "payload": {"concurrency": 4, "name": "retrieval"}, "timestamp": 1779045926.033195}
+{"name": "worker_pool.start", "payload": {"concurrency": 2, "name": "browser"}, "timestamp": 1779045926.034226}
+{"name": "worker_pool.start", "payload": {"concurrency": 1, "name": "compression"}, "timestamp": 1779045926.0352652}
+{"name": "runtime.start", "payload": {"host": "127.0.0.1", "port": 8787}, "timestamp": 1779045926.0376582}
+{"name": "event.published", "payload": {"event_id": "ebfd1680f472425c8426f2a9c2083c0e", "event_type": "worker.updated"}, "timestamp": 1779045926.0413654}

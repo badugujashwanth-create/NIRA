@@ -1,0 +1,118 @@
+{
+  "annotations": {
+    "list": []
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "expr": "nira_state_ram_usage_mb",
+          "legendFormat": "RAM MB",
+          "refId": "A"
+        },
+        {
+          "expr": "nira_state_cpu_usage",
+          "legendFormat": "CPU %",
+          "refId": "B"
+        }
+      ],
+      "title": "Host Pressure",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "Prometheus",
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 8,
+        "y": 0
+      },
+      "id": 2,
+      "targets": [
+        {
+          "expr": "nira_queue_depth",
+          "legendFormat": "{{queue}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Queue Depth",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "Prometheus",
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 16,
+        "y": 0
+      },
+      "id": 3,
+      "targets": [
+        {
+          "expr": "nira_state_compression_ratio",
+          "legendFormat": "Compression Ratio",
+          "refId": "A"
+        },
+        {
+          "expr": "nira_state_retrieval_precision",
+          "legendFormat": "Retrieval Precision",
+          "refId": "B"
+        },
+        {
+          "expr": "nira_state_hallucination_score",
+          "legendFormat": "Hallucination Score",
+          "refId": "C"
+        }
+      ],
+      "title": "Cognitive Quality Signals",
+      "type": "timeseries"
+    }
+  ],
+  "refresh": "10s",
+  "schemaVersion": 39,
+  "tags": [
+    "nira",
+    "adaptive",
+    "local-first"
+  ],
+  "templating": {
+    "list": []
+  },
+  "time": {
+    "from": "now-30m",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "NIRA Adaptive Runtime",
+  "uid": "nira-adaptive-runtime",
+  "version": 1,
+  "weekStart": ""
+}

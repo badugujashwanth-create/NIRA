@@ -1,0 +1,20 @@
+name: local_context_distillation
+goal: "Answer a coding task using bounded retrieved memory."
+pipeline:
+  - retrieve:
+      source: semantic_memory
+      top_k: 8
+  - rerank:
+      model: BAAI/bge-reranker-base
+  - compress:
+      model: phi:3
+      target_tokens: 280
+  - synthesize:
+      max_final_context_tokens: 400
+  - infer:
+      route: coding
+      model: qwen2.5-coder:7b-gguf-q4_k_m
+constraints:
+  cpu_only: true
+  default_context_window: 512
+  max_active_ram_mb: 12000

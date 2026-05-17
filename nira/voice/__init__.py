@@ -1,2 +1,0 @@
-"""Voice components for NIRA."""
-

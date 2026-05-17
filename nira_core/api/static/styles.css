@@ -1,0 +1,288 @@
+:root {
+  color-scheme: light;
+  --bg: #f7f7f4;
+  --ink: #20201d;
+  --muted: #6c6a61;
+  --line: #dad6ca;
+  --panel: #ffffff;
+  --accent: #0f7b6c;
+  --accent-2: #b24a35;
+  --accent-3: #8b6f16;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+}
+
+.topbar {
+  min-height: 72px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--line);
+  background: #fbfaf6;
+}
+
+h1,
+h2,
+p {
+  margin: 0;
+}
+
+h1 {
+  font-size: 24px;
+  font-weight: 700;
+}
+
+h2 {
+  font-size: 14px;
+  margin-bottom: 10px;
+}
+
+#statusLine {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+#statusLine[data-level="warn"] {
+  color: var(--accent-2);
+}
+
+#statusLine[data-level="busy"] {
+  color: var(--accent-3);
+}
+
+.model-pill {
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  background: #fff;
+  color: var(--muted);
+  font-size: 13px;
+  border-radius: 6px;
+  max-width: 360px;
+  overflow-wrap: anywhere;
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 360px;
+  min-height: calc(100vh - 73px);
+}
+
+.workspace {
+  min-width: 0;
+  padding: 18px 24px;
+}
+
+.side {
+  border-left: 1px solid var(--line);
+  background: #fdfcf8;
+  padding: 18px;
+  display: grid;
+  align-content: start;
+  gap: 18px;
+}
+
+.tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+
+button,
+select,
+input,
+textarea {
+  font: inherit;
+  border: 1px solid var(--line);
+  background: #fff;
+  color: var(--ink);
+  border-radius: 6px;
+}
+
+button {
+  cursor: pointer;
+  padding: 9px 12px;
+  background: #fff;
+}
+
+button:disabled {
+  cursor: wait;
+  opacity: 0.55;
+}
+
+button:hover,
+.tab.active {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+textarea,
+input,
+select {
+  padding: 10px;
+}
+
+textarea {
+  resize: vertical;
+  width: 100%;
+}
+
+.panel {
+  display: none;
+}
+
+.panel.active {
+  display: block;
+}
+
+.log {
+  height: min(58vh, 620px);
+  overflow: auto;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  border-radius: 8px;
+  padding: 14px;
+}
+
+.log.compact {
+  height: 46vh;
+}
+
+.message {
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #eeeae0;
+  white-space: pre-wrap;
+}
+
+.message .role {
+  display: block;
+  color: var(--accent-3);
+  font-size: 12px;
+  margin-bottom: 5px;
+  text-transform: uppercase;
+}
+
+.composer,
+.workflow-runner,
+.toolbar {
+  display: grid;
+  grid-template-columns: 140px minmax(0, 1fr) auto auto;
+  gap: 10px;
+  align-items: stretch;
+  margin-top: 12px;
+}
+
+.workflow-runner {
+  grid-template-columns: 180px minmax(0, 1fr) auto;
+  margin-top: 0;
+  margin-bottom: 12px;
+}
+
+.toolbar {
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  margin-top: 0;
+  margin-bottom: 12px;
+}
+
+.list {
+  display: grid;
+  gap: 10px;
+}
+
+.item {
+  border: 1px solid var(--line);
+  background: var(--panel);
+  border-radius: 8px;
+  padding: 10px;
+}
+
+.item strong {
+  display: block;
+  margin-bottom: 4px;
+}
+
+.item p {
+  color: var(--muted);
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+
+.small .item,
+.events .item {
+  font-size: 12px;
+}
+
+.events {
+  max-height: 42vh;
+  overflow: auto;
+  display: grid;
+  gap: 8px;
+}
+
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(110px, 1fr));
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.metric {
+  border: 1px solid var(--line);
+  background: var(--panel);
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.metric span {
+  display: block;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.metric strong {
+  font-size: 22px;
+}
+
+.json {
+  overflow: auto;
+  border: 1px solid var(--line);
+  background: #fff;
+  border-radius: 8px;
+  padding: 12px;
+  max-height: 48vh;
+}
+
+@media (max-width: 980px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+
+  .side {
+    border-left: 0;
+    border-top: 1px solid var(--line);
+  }
+
+  .composer,
+  .workflow-runner,
+  .toolbar {
+    grid-template-columns: 1fr;
+  }
+
+  .metrics-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

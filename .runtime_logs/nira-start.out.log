@@ -1,0 +1,50 @@
+NIRA startup summary
+UI:  http://127.0.0.1:8787/ui
+API: http://127.0.0.1:8787
+[ok] python:fastapi: available
+[ok] python:uvicorn: available
+[ok] python:httpx: available
+[ok] python:chromadb: available
+[ok] python:playwright: available
+[warn] python:faster_whisper: missing package: faster_whisper
+[ok] local_paths: data and sandbox paths are writable
+[ok] ollama: reachable; missing models: phi:3, qwen2.5-coder:7b-gguf-q4_k_m, qwen2.5:14b-gguf-q4_k_m
+[warn] redis: using in-memory queue fallback: Error 22 connecting to 127.0.0.1:6379. The remote computer refused the network connection.
+INFO:     127.0.0.1:63816 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63818 - "GET /analytics/summary HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60117 - "GET /ui HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60117 - "GET /static/styles.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55640 - "GET /static/app.js HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55640 - "GET /memory/timeline?limit=30 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60117 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55354 - "GET /models HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55640 - "GET /analytics/summary HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62821 - "GET /state HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60117 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:56796 - "GET /telemetry HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50119 - "GET /events/replay?limit=25 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58982 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59644 - "GET /models HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52136 - "GET /state HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57441 - "GET /telemetry HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56480 - "GET /analytics/summary HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50501 - "GET /events/replay?limit=25 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60003 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51841 - "GET /models HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55151 - "GET /state HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51766 - "GET /telemetry HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53700 - "GET /analytics/summary HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63923 - "GET /events/replay?limit=25 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63923 - "GET /memory/timeline?limit=30 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53700 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51766 - "GET /models HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55151 - "GET /state HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51841 - "GET /telemetry HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60003 - "GET /analytics/summary HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63923 - "GET /events/replay?limit=25 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58760 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62495 - "GET /models HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49680 - "GET /state HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49666 - "GET /telemetry HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58055 - "GET /analytics/summary HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55361 - "GET /events/replay?limit=25 HTTP/1.1" 200 OK
