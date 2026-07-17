@@ -24,7 +24,7 @@ class BuildRunner(Tool):
             return ToolResult(False, f"Invalid build directory: {exc}")
         command = str(args.get("command") or self._detect_command(cwd))
         try:
-            command_args = command if os.name == "nt" else shlex.split(command, posix=False)
+            command_args = command if os.name == "nt" else shlex.split(command)
         except ValueError as exc:
             return ToolResult(False, f"Invalid build command: {exc}", {"command": command})
         if not command_args:
