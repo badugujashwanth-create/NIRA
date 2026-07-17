@@ -105,8 +105,8 @@ Expected startup output example:
 
 ```text
 [info] Starting llama.cpp server with:
-       executable : C:\...\local_llm\runtime\llama-server.exe
-       model      : C:\...\local_llm\models\...\q4_k_m....gguf
+       executable : <repo>\local_llm\runtime\llama-server.exe
+       model      : <repo>\local_llm\models\<model>\q4_k_m.gguf
        host       : 127.0.0.1
        port       : 8080
        ctx-size   : 2048

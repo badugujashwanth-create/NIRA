@@ -6,6 +6,8 @@
 
 > Watch the verified terminal walkthrough of setup, tests, architecture, and optional integration boundaries.
 
+[Case study](docs/CASE_STUDY.md) · [Architecture](docs/ARCHITECTURE.md) · [Test evidence](docs/TEST_REPORT.md) · [Interview guide](docs/INTERVIEW_GUIDE.md)
+
 NIRA is a modular, local-first assistant runtime for planning tasks, coordinating specialist agents, and running permissioned automation. It is intended for developers exploring auditable desktop assistance without making cloud services or unrestricted autonomy mandatory.
 
 ## Why it exists
