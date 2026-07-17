@@ -1,7 +1,7 @@
 # Nira Folder Merge Report
 
 Date: 2026-03-04
-Workspace: `C:\Users\JASHWANTH\NIRAmini`
+Workspace: repository root
 
 ## Merge strategy
 

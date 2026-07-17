@@ -2,11 +2,11 @@
 
 ## Current Runtime Status
 
-NIRA currently runs through the Stage 3 autonomous entry point in [main.py](c:/Users/JASHWANTH/NIRAmini/main.py). The root runtime is backed by:
+NIRA currently runs through the Stage 3 autonomous entry point in [main.py](main.py). The root runtime is backed by:
 
-- [config/settings.py](c:/Users/JASHWANTH/NIRAmini/config/settings.py)
-- [config/logger.py](c:/Users/JASHWANTH/NIRAmini/config/logger.py)
-- [core/platform.py](c:/Users/JASHWANTH/NIRAmini/core/platform.py)
+- [config/settings.py](config/settings.py)
+- [config/logger.py](config/logger.py)
+- [core/platform.py](core/platform.py)
 
 Legacy packages under `nira/` remain present for compatibility, but the active Stage 3 execution path is the root-level `config/`, `core/`, and `plugins/` architecture.
 
@@ -37,15 +37,15 @@ The runtime also emitted structured JSON logs for startup, agent selection, and 
 
 ### Stage 3 Autonomous Runtime
 
-- Multi-step goal execution via [core/autonomy/goal_executor.py](c:/Users/JASHWANTH/NIRAmini/core/autonomy/goal_executor.py)
-- Task tracking via [core/autonomy/task_manager.py](c:/Users/JASHWANTH/NIRAmini/core/autonomy/task_manager.py)
-- Goal planning via [core/reasoning/planner.py](c:/Users/JASHWANTH/NIRAmini/core/reasoning/planner.py)
-- Agent decision routing via [core/reasoning/decision_engine.py](c:/Users/JASHWANTH/NIRAmini/core/reasoning/decision_engine.py)
+- Multi-step goal execution via [core/autonomy/goal_executor.py](core/autonomy/goal_executor.py)
+- Task tracking via [core/autonomy/task_manager.py](core/autonomy/task_manager.py)
+- Goal planning via [core/reasoning/planner.py](core/reasoning/planner.py)
+- Agent decision routing via [core/reasoning/decision_engine.py](core/reasoning/decision_engine.py)
 
 ### Multi-Agent Coordination
 
-- Coordinator: [core/agents/coordinator.py](c:/Users/JASHWANTH/NIRAmini/core/agents/coordinator.py)
-- Specialist agents: [core/agents/specialists.py](c:/Users/JASHWANTH/NIRAmini/core/agents/specialists.py)
+- Coordinator: [core/agents/coordinator.py](core/agents/coordinator.py)
+- Specialist agents: [core/agents/specialists.py](core/agents/specialists.py)
 - Agent roles:
   - Conversation agent
   - Planning agent
@@ -55,27 +55,27 @@ The runtime also emitted structured JSON logs for startup, agent selection, and 
 
 ### Research System
 
-- Web search client: [core/research/web_search.py](c:/Users/JASHWANTH/NIRAmini/core/research/web_search.py)
-- Content extraction and summarization: [core/research/content_parser.py](c:/Users/JASHWANTH/NIRAmini/core/research/content_parser.py)
-- Research workflow: [core/research/research_agent.py](c:/Users/JASHWANTH/NIRAmini/core/research/research_agent.py)
+- Web search client: [core/research/web_search.py](core/research/web_search.py)
+- Content extraction and summarization: [core/research/content_parser.py](core/research/content_parser.py)
+- Research workflow: [core/research/research_agent.py](core/research/research_agent.py)
 
 ### Knowledge Base
 
-- Persistent knowledge storage: [core/knowledge/knowledge_base.py](c:/Users/JASHWANTH/NIRAmini/core/knowledge/knowledge_base.py)
+- Persistent knowledge storage: [core/knowledge/knowledge_base.py](core/knowledge/knowledge_base.py)
 - Lightweight semantic retrieval using token-hash embeddings and overlap scoring
 
 ### Plugins
 
-- Plugin base: [plugins/base.py](c:/Users/JASHWANTH/NIRAmini/plugins/base.py)
-- Plugin loader: [plugins/manager.py](c:/Users/JASHWANTH/NIRAmini/plugins/manager.py)
+- Plugin base: [plugins/base.py](plugins/base.py)
+- Plugin loader: [plugins/manager.py](plugins/manager.py)
 - Included plugins:
-  - [plugins/weather_plugin.py](c:/Users/JASHWANTH/NIRAmini/plugins/weather_plugin.py)
-  - [plugins/news_plugin.py](c:/Users/JASHWANTH/NIRAmini/plugins/news_plugin.py)
-  - [plugins/calendar_plugin.py](c:/Users/JASHWANTH/NIRAmini/plugins/calendar_plugin.py)
+  - [plugins/weather_plugin.py](plugins/weather_plugin.py)
+  - [plugins/news_plugin.py](plugins/news_plugin.py)
+  - [plugins/calendar_plugin.py](plugins/calendar_plugin.py)
 
 ### Monitoring
 
-- Counters and timings: [core/monitoring/metrics.py](c:/Users/JASHWANTH/NIRAmini/core/monitoring/metrics.py)
+- Counters and timings: [core/monitoring/metrics.py](core/monitoring/metrics.py)
 - Structured JSON logging to console and `data/cache/nira_stage3.log`
 
 ## Project Structure
@@ -115,9 +115,9 @@ Legacy or auxiliary folders still present:
 
 Focused Stage 3 tests:
 
-- [tests/test_planner.py](c:/Users/JASHWANTH/NIRAmini/tests/test_planner.py)
-- [tests/test_knowledge_base.py](c:/Users/JASHWANTH/NIRAmini/tests/test_knowledge_base.py)
-- [tests/test_goal_executor.py](c:/Users/JASHWANTH/NIRAmini/tests/test_goal_executor.py)
+- [tests/test_planner.py](tests/test_planner.py)
+- [tests/test_knowledge_base.py](tests/test_knowledge_base.py)
+- [tests/test_goal_executor.py](tests/test_goal_executor.py)
 
 Command:
 

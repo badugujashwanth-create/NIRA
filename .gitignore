@@ -1,5 +1,8 @@
 __pycache__/
+test-results/
+playwright-report/
 *.py[cod]
+*.egg-info/
 *.log
 .pytest-tmp/
 pytest-cache-files-*/
