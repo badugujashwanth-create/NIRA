@@ -26,14 +26,14 @@ NIRAMini\
 ## 1) Install Python Dependencies
 
 ```powershell
-cd C:\Users\JASHWANTH\NIRAMini\local_llm
+cd NIRA\local_llm
 python -m pip install -r .\requirements.txt
 ```
 
 ## 2) Download Official llama.cpp Windows Binaries
 
 ```powershell
-cd C:\Users\JASHWANTH\NIRAMini\local_llm
+cd NIRA\local_llm
 powershell -ExecutionPolicy Bypass -File .\scripts\download_llama_cpp.ps1 -Force
 ```
 
@@ -41,7 +41,7 @@ What this script does:
 - Calls GitHub release API for official `ggerganov/llama.cpp` (with redirect-safe fallback).
 - Downloads Windows CPU x64 prebuilt zip.
 - Extracts into:
-  - `C:\Users\JASHWANTH\NIRAMini\local_llm\runtime\`
+  - `local_llm\runtime\`
 - Validates:
   - `llama-server.exe`
   - `llama-cli.exe`
@@ -56,7 +56,7 @@ Get-ChildItem .\runtime -Recurse -Filter llama-cli.exe
 Expected output example:
 
 ```text
-Directory: C:\Users\JASHWANTH\NIRAMini\local_llm\runtime
+Directory: local_llm\runtime
 Mode   LastWriteTime   Length Name
 ----   -------------   ------ ----
 -a---  ...             ...    llama-server.exe
@@ -70,7 +70,7 @@ Default model source:
 - Quant: `q4_k_m`
 
 ```powershell
-cd C:\Users\JASHWANTH\NIRAMini\local_llm
+cd NIRA\local_llm
 python .\scripts\fetch_7b_model.py --quant q4_k_m --out-dir .\models
 ```
 
@@ -88,7 +88,7 @@ Get-ChildItem .\models\*.gguf
 ## 4) Start llama.cpp Local Server
 
 ```powershell
-cd C:\Users\JASHWANTH\NIRAMini\local_llm
+cd NIRA\local_llm
 $MODEL = (Get-ChildItem .\models\*q4_k_m*.gguf | Sort-Object Name | Select-Object -First 1).FullName
 if (-not $MODEL) { throw "No q4_k_m GGUF model found in .\models" }
 python .\llama_cpp_server.py --llama-dir .\runtime --model "$MODEL"
@@ -105,8 +105,8 @@ Expected startup output example:
 
 ```text
 [info] Starting llama.cpp server with:
-       executable : C:\...\local_llm\runtime\llama-server.exe
-       model      : C:\...\local_llm\models\...\q4_k_m....gguf
+       executable : <repo>\local_llm\runtime\llama-server.exe
+       model      : <repo>\local_llm\models\<model>\q4_k_m.gguf
        host       : 127.0.0.1
        port       : 8080
        ctx-size   : 2048
@@ -120,7 +120,7 @@ Expected startup output example:
 Open a second Windows terminal:
 
 ```powershell
-cd C:\Users\JASHWANTH\NIRAMini\local_llm
+cd NIRA\local_llm
 python .\query_example.py --base-url http://127.0.0.1:8080 --prompt "Explain local LLM inference in 3 lines."
 ```
 

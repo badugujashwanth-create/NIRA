@@ -134,7 +134,7 @@ Model is instructed to return strict JSON:
 Use your existing `local_llm` folder tooling:
 
 ```powershell
-cd C:\Users\JASHWANTH\NIRAMini\local_llm
+cd NIRA\local_llm
 powershell -ExecutionPolicy Bypass -File .\scripts\download_llama_cpp.ps1 -Force
 python .\scripts\fetch_7b_model.py --quant q4_k_m --out-dir .\models
 $MODEL = (Get-ChildItem .\models\*q4_k_m*.gguf | Sort-Object Name | Select-Object -First 1).FullName
@@ -146,7 +146,7 @@ python .\llama_cpp_server.py --llama-dir .\runtime --model "$MODEL"
 Open a second terminal:
 
 ```powershell
-cd C:\Users\JASHWANTH\NIRAMini\nira_agent
+cd NIRA\nira_agent
 python -m pip install -r .\requirements.txt
 $env:DB_HOST = "localhost"
 $env:DB_PORT = "3306"
@@ -159,7 +159,7 @@ python -m nira_agent
 Or:
 
 ```powershell
-cd C:\Users\JASHWANTH\NIRAMini
+cd NIRA
 powershell -ExecutionPolicy Bypass -File .\nira_agent\scripts\run.ps1
 ```
 
