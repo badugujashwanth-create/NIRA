@@ -69,8 +69,9 @@ class TaskGraphExecutor:
                 result=result,
                 message=f"Failed {node.description or node.tool}.",
             )
-            repair = self.repair_loop.decide(node, args, result)
-            if repair.attempted:
+            permission_denied = bool(result.data.get("permission_required"))
+            repair = self.repair_loop.decide(node, args, result) if not permission_denied else None
+            if repair is not None and repair.attempted:
                 graph.arguments[node.task_id] = repair.args
                 repaired = self.registry.execute(node.tool, repair.args, state)
                 self._record_task_output(state, node.task_id, node.tool, repaired)

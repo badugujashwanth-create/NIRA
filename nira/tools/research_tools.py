@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 from nira.memory.research_memory import ResearchEntry
-from nira.tools.base import Tool, ToolResult
+from nira.tools.base import Tool, ToolAccess, ToolResult
 
 
 def _context(state) -> dict[str, Any]:
@@ -21,6 +21,7 @@ def _tool_output(state, key: str) -> dict[str, Any]:
 class TopicPlanningTool(Tool):
     name = "plan_topic"
     description = "Break a research request into topic, subtopics, and questions."
+    access = ToolAccess.READ
 
     def __init__(self, topic_planner) -> None:
         self.topic_planner = topic_planner
@@ -35,6 +36,9 @@ class TopicPlanningTool(Tool):
 class AnalyzeSourcesTool(Tool):
     name = "analyze_sources"
     description = "Collect local research text and extract key concepts and findings."
+
+    def access_for(self, args: dict[str, Any]) -> ToolAccess:
+        return ToolAccess.NETWORK if bool(args.get("use_web", False)) else ToolAccess.READ
 
     def __init__(self, source_analyzer) -> None:
         self.source_analyzer = source_analyzer
@@ -61,6 +65,7 @@ class AnalyzeSourcesTool(Tool):
 class SummarizeInformationTool(Tool):
     name = "summarize_information"
     description = "Summarize collected research text and compress it for storage."
+    access = ToolAccess.READ
 
     def __init__(self, summarizer) -> None:
         self.summarizer = summarizer
@@ -77,6 +82,7 @@ class SummarizeInformationTool(Tool):
 class GenerateResearchReportTool(Tool):
     name = "generate_report"
     description = "Generate and persist a structured research report."
+    access = ToolAccess.STATE
 
     def __init__(self, report_generator) -> None:
         self.report_generator = report_generator
@@ -100,6 +106,7 @@ class GenerateResearchReportTool(Tool):
 class StoreKnowledgeTool(Tool):
     name = "store_knowledge"
     description = "Store summarized research into persistent knowledge memory and vector memory."
+    access = ToolAccess.STATE
 
     def __init__(self, research_memory, vector_store, knowledge_graph) -> None:
         self.research_memory = research_memory

@@ -7,12 +7,13 @@ from pathlib import Path
 from typing import Any
 
 from nira.core.path_utils import PathSecurityError, resolve_within_root, state_workspace_root
-from nira.tools.base import Tool, ToolResult
+from nira.tools.base import Tool, ToolAccess, ToolResult
 
 
 class BuildRunner(Tool):
     name = "run_build"
     description = "Run a local build, compile, or test command."
+    access = ToolAccess.PROCESS
 
     def __init__(self, timeout_sec: int = 180) -> None:
         self.timeout_sec = timeout_sec
@@ -48,4 +49,4 @@ class BuildRunner(Tool):
 
     @staticmethod
     def _detect_command(cwd: Path) -> str:
-        return "python -m compileall ."
+        return "python -m compileall -q nira nira_agent local_llm main.py"

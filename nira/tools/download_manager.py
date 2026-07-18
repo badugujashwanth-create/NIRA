@@ -7,12 +7,16 @@ from typing import Any
 import requests
 
 from nira.core.path_utils import PathSecurityError, resolve_within_root, state_workspace_root, validate_public_http_url
-from nira.tools.base import Tool, ToolResult
+from nira.tools.base import Tool, ToolAccess, ToolResult
 
 
 class DownloadManager(Tool):
     name = "download_resource"
     description = "Download or copy a local resource when explicitly requested."
+
+    def access_for(self, args: dict[str, Any]) -> ToolAccess:
+        source = str(args.get("source", "")).strip()
+        return ToolAccess.NETWORK if source.startswith(("http://", "https://")) else ToolAccess.STATE
 
     def __init__(self, web_enabled: bool = False) -> None:
         self.web_enabled = web_enabled

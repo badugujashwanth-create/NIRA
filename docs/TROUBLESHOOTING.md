@@ -1,18 +1,33 @@
 # Troubleshooting
 
-## Installation fails
+## Desktop does not open
 
-Use the package manager and lockfile already committed to this repository. Confirm the required runtime is installed, clear only generated caches, and retry the install command from [DEVELOPMENT.md](DEVELOPMENT.md).
+Run `python -m nira --console`. Tk must be present in the Python installation. Check `python -c "import tkinter"`.
 
-## The application starts but a feature is unavailable
+## Local model is unavailable
 
-Check the browser or terminal error first, then verify the documented environment variables and dependent services. Voice, OCR, browser, and local-model features require optional system dependencies and are not validated by the core test suite.
+This is expected unless explicitly configured. Confirm the endpoint with its own health route, model name/path, and `NIRA_LOCAL_MODEL_ENABLED=true` or `--enable-local-model`. Offline mode remains functional.
 
-## Tests and builds
+## A tool is blocked
 
-Run checks from the component directory shown in [TEST_REPORT.md](TEST_REPORT.md). A successful dependency install is not evidence that a test or production build passed.
+Read the access class and arguments. Approve once only if you initiated the action. For noninteractive commands, add the narrow process-level grant intentionally. Never broaden permissions to hide a planner mistake.
 
-## Sensitive configuration
+## A path is rejected
 
-Never paste real credentials into an issue or screenshot. Replace local configuration values with placeholders before sharing diagnostic output.
+The target must resolve inside `--workspace`. Symlinks and `..` paths that escape are rejected. Select the correct workspace rather than bypassing containment.
 
+## History is missing
+
+Confirm the same `--state-dir` is used. `runtime.db` is local and not synchronized. Do not edit it while NIRA is running.
+
+## Optional import fails
+
+PyQt and older encrypted-memory modules require `.[legacy-qt]` or `.[legacy-security]`. They are outside the v0.4 core contract.
+
+## Verification fails
+
+Run `pip check`, then one failing test directly. Keep the exact command/output. If the wheel behaves differently, install it in a clean environment outside the checkout to avoid source shadowing.
+
+## State is corrupt or disk is full
+
+Stop NIRA and preserve the state directory before manual recovery. v0.4 has no automated migration/corruption repair; do not claim recovery succeeded without validating exported conversations and database integrity.

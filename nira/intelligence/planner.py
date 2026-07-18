@@ -48,27 +48,22 @@ class Planner:
 
     @staticmethod
     def _coding_plan(goal: str, context: dict[str, Any]) -> list[PlannedTask]:
-        manifests = context.get("manifests", ["README.md"])
-        config_candidates = [item for item in manifests if item.lower() not in {"requirements.txt", "readme.md"}]
-        target = config_candidates[0] if config_candidates else ".env"
         return [
             PlannedTask("1", "Inspect the project layout and manifests", "analyze_project", args={"path": "."}),
-            PlannedTask("2", "Add or update required dependency entries", "add_dependency", dependencies=["1"]),
             PlannedTask(
-                "3",
-                "Update local configuration to support the feature",
-                "update_config",
-                dependencies=["2"],
-                args={"path": target, "setting": "goal", "value": goal},
-            ),
-            PlannedTask(
-                "4",
-                "Generate or refine the code needed for the goal",
+                "2",
+                "Generate a proposed implementation artifact in NIRA's state directory",
                 "generate_code",
-                dependencies=["3"],
+                dependencies=["1"],
                 args={"instructions": goal},
             ),
-            PlannedTask("5", "Run a local verification command or build", "run_build", dependencies=["4"], args={"cwd": "."}),
+            PlannedTask(
+                "3",
+                "Run a local verification command only after approval",
+                "run_build",
+                dependencies=["2"],
+                args={"cwd": "."},
+            ),
         ]
 
     @staticmethod
@@ -97,4 +92,5 @@ class Planner:
 
     @staticmethod
     def _chat_plan(goal: str, guidance: str) -> list[PlannedTask]:
-        return [PlannedTask("1", "Capture reasoning notes for the request", "edit_document", args={"path": "chat_notes.md", "content": f"{goal}\n\n{guidance}".strip()})]
+        # Conversation never creates a file merely because the user sent a message.
+        return []

@@ -4,12 +4,13 @@ from pathlib import Path
 from typing import Any
 
 from nira.core.path_utils import PathSecurityError, resolve_within_root
-from nira.tools.base import Tool, ToolResult
+from nira.tools.base import Tool, ToolAccess, ToolResult
 
 
 class CodeGenerator(Tool):
     name = "generate_code"
     description = "Generate local code or implementation notes using the local model."
+    access = ToolAccess.STATE
 
     def __init__(self, model) -> None:
         self.model = model

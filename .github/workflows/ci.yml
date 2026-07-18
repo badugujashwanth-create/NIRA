@@ -2,7 +2,7 @@ name: Python CI
 
 on:
   push:
-    branches: [main, portfolio-polish]
+    branches: [main]
   pull_request:
 
 permissions:
@@ -13,10 +13,20 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - uses: actions/setup-python@v6
         with:
           python-version: '3.13'
           cache: pip
-      - run: python -m pip install -e .
+      - run: python -m pip install -e ".[dev]"
+      - run: python -m pip check
       - run: python -m pytest -q
+      - run: python -m compileall -q nira nira_agent local_llm main.py
+      - run: python -m nira --health --state-dir "${{ runner.temp }}/nira-smoke"
+      - run: pip-audit --skip-editable
+      - run: python -m build
 

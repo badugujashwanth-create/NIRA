@@ -4,22 +4,33 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "nira-local-runtime"
-version = "0.3.0"
-description = "Autonomous modular AI assistant runtime for NIRA"
+version = "0.4.0"
+description = "Local-first AI assistant runtime with explicit tool permissions"
 requires-python = ">=3.11"
 dependencies = [
-  "requests>=2.32.0",
-  "psutil>=5.9.8",
-  "numpy>=1.26.0",
-  "pytest>=8.0.0",
+  "requests>=2.32.0,<3",
+  "psutil>=5.9.8,<8",
+  "numpy>=1.26.0,<3",
 ]
+
+[project.optional-dependencies]
+dev = [
+  "build>=1.2.2,<2",
+  "pip-audit>=2.9.0,<3",
+  "pytest>=8.0.0,<10",
+]
+legacy-security = ["cryptography>=44.0.0,<47"]
+legacy-qt = ["PyQt5>=5.15.10,<6"]
+
+[project.scripts]
+nira = "nira.main:main"
 
 [tool.setuptools]
 py-modules = ["main"]
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["nira*", "core*", "config*", "plugins*"]
+include = ["nira", "nira.*", "nira_agent", "nira_agent.*", "local_llm", "local_llm.*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

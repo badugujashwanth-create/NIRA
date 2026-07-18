@@ -2,12 +2,13 @@ from __future__ import annotations
 
 from typing import Any
 
-from nira.tools.base import Tool, ToolResult
+from nira.tools.base import Tool, ToolAccess, ToolResult
 
 
 class DocumentEditorTool(Tool):
     name = "edit_document"
     description = "Create or update a local markdown, txt, or report document."
+    access = ToolAccess.STATE
 
     def __init__(self, document_editor, report_generator) -> None:
         self.document_editor = document_editor

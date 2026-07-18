@@ -29,3 +29,6 @@ class ShortTermMemory:
 
     def snapshot(self) -> list[Turn]:
         return list(self._turns)
+
+    def clear(self) -> None:
+        self._turns.clear()

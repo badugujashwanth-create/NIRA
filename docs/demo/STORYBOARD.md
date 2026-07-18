@@ -1,13 +1,16 @@
-# NIRA Local AI Assistant storyboard
+# NIRA v0.4 storyboard
 
-| Time | Frame | Evidence to show |
-|---:|---|---|
-| 0–5s | Title | Project name and concise problem statement |
-| 5–15s | Entry point | Intended user and starting screen/terminal |
-| 15–35s | Main action | First half of the real primary workflow |
-| 35–55s | Result | Actual response, state change, or validated output |
-| 55–75s | Architecture | Component boundaries from docs/ARCHITECTURE.md |
-| 75–90s | Close | Owner, status, limitation, and repository name |
+| Time | Scene | Real evidence |
+| ---: | --- | --- |
+| 0:00-0:18 | Start | Desktop, composer, offline mode, local storage, approval requirement |
+| 0:18-0:45 | Health/chat | Runtime health subset and deterministic response |
+| 0:45-1:15 | Sessions | Multiple synthetic local sessions, search, pin/rename/export/delete controls |
+| 1:15-1:40 | Inspect | `analyze_project` source/language/manifests, excluded dependency trees |
+| 1:40-2:00 | Read/guard | Bounded README result and rejected path escape |
+| 2:00-2:45 | Deny | Coding graph, process dialog, denial, failed task, no retry |
+| 2:45-3:00 | Decision evidence | Tool/access/verdict/reason without arguments |
+| 3:00-3:30 | Allow once | Second coding graph, one approved compile verification |
+| 3:30-3:48 | Release proof | 49 tests, audit, secret scans, wheel smoke |
+| 3:48-4:05 | Honest close | Real-model/optional/accessibility/retrieval limits |
 
-Use 1280×720 or 1920×1080 output. Leave short pauses after meaningful results and avoid rapid pointer movement.
-
+The application schedules these scenes internally. The recorder does not inject keys or replace responses.

@@ -18,6 +18,7 @@ from nira.intelligence.intent_analyzer import IntentAnalyzer, IntentResult
 from nira.intelligence.planner import Planner
 from nira.intelligence.reflection_engine import ReflectionEngine
 from nira.memory.error_memory import ErrorMemory
+from nira.memory.conversation_store import Conversation, ConversationStore
 from nira.memory.knowledge_graph import KnowledgeGraph
 from nira.memory.research_memory import ResearchMemory
 from nira.memory.short_term_memory import ShortTermMemory
@@ -33,7 +34,9 @@ from nira.research.summarizer import Summarizer
 from nira.research.topic_planner import TopicPlanner
 from nira.task_graph.executor import ExecutionSummary, TaskGraphExecutor
 from nira.task_graph.planner import TaskGraphPlanner
-from nira.tools import ToolRegistry, build_default_registry
+from nira.tools import ToolRegistry, ToolResult, build_default_registry
+from nira.security.tool_policy import ApprovalCallback, ToolPermissionPolicy
+from nira.tools.base import ToolAccess
 from nira.training.interaction_logger import InteractionLogger
 from nira.workflows.pattern_detector import PatternDetector
 from nira.workflows.workflow_engine import WorkflowEngine
@@ -73,11 +76,15 @@ class AgentRuntime:
         config: NiraConfig,
         model: LocalModel | None = None,
         tool_registry: ToolRegistry | None = None,
+        permission_policy: ToolPermissionPolicy | None = None,
     ) -> None:
         self.config = config
         self.model = model
         self.intent_analyzer = IntentAnalyzer()
         self.short_term_memory = ShortTermMemory(max_turns=config.max_short_term_turns)
+        self.conversation_store = ConversationStore(config.database_path)
+        self.current_conversation = self.conversation_store.latest_or_create()
+        self._load_conversation_context(self.current_conversation.conversation_id)
         self.performance_analyzer = PerformanceAnalyzer(config.database_path)
         self.model_registry = ModelRegistry.from_config(config)
         self.model_selector = ModelSelector(self.model_registry)
@@ -88,6 +95,7 @@ class AgentRuntime:
             max_cached_models=config.max_cached_models,
             idle_ttl_sec=config.model_idle_ttl_sec,
             default_model=model,
+            enabled=config.local_model_enabled or model is not None,
         )
         self.planning_model = RoutedModelClient(self.model_manager, self.model_selector, default_task_type="planning", role="planner")
         self.coding_model = RoutedModelClient(self.model_manager, self.model_selector, default_task_type="coding", role="coding")
@@ -143,6 +151,7 @@ class AgentRuntime:
             research_memory=self.research_memory,
             vector_store=self.vector_store,
             knowledge_graph=self.knowledge_graph,
+            permission_policy=permission_policy,
         )
         self.task_executor = TaskGraphExecutor(self.tool_registry, self.reflection_engine)
         self._status_listeners: list[RuntimeListener] = []
@@ -167,6 +176,8 @@ class AgentRuntime:
             memory_hits=memory_hits,
         )
         self.short_term_memory.add_turn("user", user_input)
+        self.conversation_store.add_message(self.current_conversation.conversation_id, "user", user_input)
+        self._refresh_current_conversation()
         agent_response = self._select_agent(intent).respond(user_input, context)
         guidance = ""
         if agent_response is not None and hasattr(agent_response, "text"):
@@ -219,6 +230,95 @@ class AgentRuntime:
 
     def shutdown(self) -> None:
         self.model_manager.close()
+
+    def set_approval_callback(self, callback: ApprovalCallback | None) -> None:
+        self.tool_registry.set_approval_callback(callback)
+
+    def grant_tool_access(self, *access_levels: ToolAccess) -> None:
+        self.tool_registry.grant(*access_levels)
+
+    def health(self) -> dict[str, Any]:
+        return {
+            "status": "ready",
+            "mode": "local-model" if self.config.local_model_enabled else "deterministic-offline",
+            "local_model_enabled": self.config.local_model_enabled,
+            "workspace": str(Path.cwd()),
+            "state_directory": str(self.config.base_dir),
+            "database_ready": self.config.database_path.exists(),
+            "tools": self.tool_registry.list_tools(),
+            "allowed_access": sorted(level.value for level in self.tool_registry.permission_policy.allowed),
+            "interaction_logging_enabled": self.config.interaction_logging_enabled,
+            "current_conversation": self.current_conversation.to_dict(),
+            "recent_permission_decisions": self.tool_registry.permission_policy.recent_decisions(limit=10),
+        }
+
+    def inspect_project(self, path: str = ".") -> ToolResult:
+        return self._run_bounded_read_tool("analyze_project", {"path": path})
+
+    def read_workspace_file(self, path: str, max_bytes: int = 65_536) -> ToolResult:
+        return self._run_bounded_read_tool(
+            "file_manager",
+            {"action": "read", "path": path, "max_bytes": max_bytes},
+        )
+
+    def recent_permission_decisions(self, limit: int = 20) -> list[dict[str, object]]:
+        return self.tool_registry.permission_policy.recent_decisions(limit=limit)
+
+    def new_conversation(self, title: str = "New conversation") -> Conversation:
+        self.current_conversation = self.conversation_store.create(title)
+        self.short_term_memory.clear()
+        return self.current_conversation
+
+    def switch_conversation(self, conversation_id: str) -> Conversation:
+        conversation = self.conversation_store.get(conversation_id)
+        if conversation is None:
+            raise KeyError(f"Unknown conversation: {conversation_id}")
+        self.current_conversation = conversation
+        self._load_conversation_context(conversation_id)
+        return conversation
+
+    def list_conversations(self, limit: int = 50) -> list[Conversation]:
+        return self.conversation_store.list(limit=limit)
+
+    def search_conversations(self, query: str, limit: int = 20) -> list[dict[str, str]]:
+        return self.conversation_store.search(query, limit=limit)
+
+    def pin_conversation(self, conversation_id: str, pinned: bool = True) -> bool:
+        changed = self.conversation_store.set_pinned(conversation_id, pinned)
+        if changed and self.current_conversation.conversation_id == conversation_id:
+            refreshed = self.conversation_store.get(conversation_id)
+            if refreshed is not None:
+                self.current_conversation = refreshed
+        return changed
+
+    def rename_conversation(self, conversation_id: str, title: str) -> bool:
+        changed = self.conversation_store.rename(conversation_id, title)
+        if changed and self.current_conversation.conversation_id == conversation_id:
+            refreshed = self.conversation_store.get(conversation_id)
+            if refreshed is not None:
+                self.current_conversation = refreshed
+        return changed
+
+    def delete_conversation(self, conversation_id: str) -> bool:
+        changed = self.conversation_store.delete(conversation_id)
+        if changed and self.current_conversation.conversation_id == conversation_id:
+            self.current_conversation = self.conversation_store.latest_or_create()
+            self._load_conversation_context(self.current_conversation.conversation_id)
+        return changed
+
+    def export_conversation(self, output_path: Path, conversation_id: str | None = None) -> Path:
+        target_id = conversation_id or self.current_conversation.conversation_id
+        return self.conversation_store.export_markdown(target_id, output_path)
+
+    def _load_conversation_context(self, conversation_id: str) -> None:
+        self.short_term_memory.clear()
+        messages = self.conversation_store.messages(conversation_id, limit=self.config.max_short_term_turns)
+        for message in messages:
+            self.short_term_memory.add_turn(message.role, message.content)
+
+    def _run_bounded_read_tool(self, tool_name: str, args: dict[str, Any]) -> ToolResult:
+        state = AgentState(context={"cwd": str(Path.cwd())})
+        return self.tool_registry.execute(tool_name, args, state)
 
     def _collect_memory_hits(self, user_input: str, intent: IntentResult) -> dict[str, Any]:
         return {
@@ -296,6 +396,8 @@ class AgentRuntime:
         duration_ms = (time.perf_counter() - started) * 1000
         task_trace = execution.trace
         self.short_term_memory.add_turn("assistant", final_text)
+        self.conversation_store.add_message(self.current_conversation.conversation_id, "assistant", final_text)
+        self._refresh_current_conversation()
         self.vector_store.add_text("conversation", user_input, {"role": "user", "kind": intent.kind})
         self.vector_store.add_text("conversation", final_text, {"role": "assistant", "kind": intent.kind})
         self.workflow_memory.record_trace(task_trace, success=execution.success)
@@ -308,18 +410,24 @@ class AgentRuntime:
             self.performance_analyzer.summary(),
             execution,
         )
-        self.interaction_logger.log(
-            {
-                "input": user_input,
-                "response": final_text,
-                "intent": intent.to_dict(),
-                "trace": task_trace,
-                "results": [result.to_dict() for result in execution.results],
-                "anomalies": anomalies,
-                "duration_ms": duration_ms,
-            }
-        )
+        if self.config.interaction_logging_enabled:
+            self.interaction_logger.log(
+                {
+                    "input": user_input,
+                    "response": final_text,
+                    "intent": intent.to_dict(),
+                    "trace": task_trace,
+                    "results": [result.to_dict() for result in execution.results],
+                    "anomalies": anomalies,
+                    "duration_ms": duration_ms,
+                }
+            )
         return anomalies
+
+    def _refresh_current_conversation(self) -> None:
+        refreshed = self.conversation_store.get(self.current_conversation.conversation_id)
+        if refreshed is not None:
+            self.current_conversation = refreshed
 
     def _forward_progress_update(self, event: dict[str, Any]) -> None:
         self._emit_status(

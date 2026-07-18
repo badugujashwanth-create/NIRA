@@ -26,6 +26,7 @@ def _parse_int(value: Any, default: int) -> int:
 class NiraConfig:
     base_dir: Path = field(default_factory=lambda: Path.home() / ".nira")
     llama_base_url: str = "http://127.0.0.1:8080"
+    local_model_enabled: bool = False
     llama_model: str | None = None
     planner_model: str | None = None
     coding_model: str | None = None
@@ -50,6 +51,7 @@ class NiraConfig:
     max_context_chars: int = 4800
     max_cached_models: int = 3
     model_idle_ttl_sec: int = 900
+    interaction_logging_enabled: bool = False
 
     database_path: Path = field(init=False)
     logs_dir: Path = field(init=False)

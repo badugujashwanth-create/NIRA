@@ -28,6 +28,19 @@ class ToolTests(unittest.TestCase):
             read = manager.run({"action": "read", "path": str(path)}, state)
             self.assertIn("hello", read.output)
 
+    def test_file_manager_bounds_large_read_output(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "large.txt"
+            path.write_text("x" * 200, encoding="utf-8")
+            read = FileManager().run(
+                {"action": "read", "path": str(path), "max_bytes": 32},
+                DummyState(Path(tmp)),
+            )
+            self.assertTrue(read.ok)
+            self.assertTrue(read.data["truncated"])
+            self.assertEqual(read.data["max_bytes"], 32)
+            self.assertIn("Output truncated", read.output)
+
     def test_update_config_appends_setting(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / ".env"
@@ -55,6 +68,22 @@ class ToolTests(unittest.TestCase):
         result = ProjectAnalyzer().run({"path": "."}, DummyState(Path.cwd()))
         self.assertTrue(result.ok)
         self.assertIn("python_files", result.data)
+
+    def test_project_analyzer_excludes_dependency_directories(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "src").mkdir()
+            (root / "src" / "app.py").write_text("print('app')", encoding="utf-8")
+            (root / ".venv").mkdir()
+            (root / ".venv" / "dependency.py").write_text("print('dependency')", encoding="utf-8")
+            (root / "node_modules").mkdir()
+            (root / "node_modules" / "library.js").write_text("export default {}", encoding="utf-8")
+
+            result = ProjectAnalyzer().run({"path": "."}, DummyState(root))
+
+            self.assertTrue(result.ok)
+            self.assertEqual(result.data["python_files"], 1)
+            self.assertEqual(result.data["languages"], {"Python": 1})
 
     def test_build_runner_executes_command(self) -> None:
         result = BuildRunner(timeout_sec=10).run({"command": "python -c \"print('ok')\""}, DummyState(Path.cwd()))
