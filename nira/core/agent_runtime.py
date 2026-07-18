@@ -18,6 +18,7 @@ from nira.intelligence.intent_analyzer import IntentAnalyzer, IntentResult
 from nira.intelligence.planner import Planner
 from nira.intelligence.reflection_engine import ReflectionEngine
 from nira.memory.error_memory import ErrorMemory
+from nira.memory.conversation_store import Conversation, ConversationStore
 from nira.memory.knowledge_graph import KnowledgeGraph
 from nira.memory.research_memory import ResearchMemory
 from nira.memory.short_term_memory import ShortTermMemory
@@ -81,6 +82,9 @@ class AgentRuntime:
         self.model = model
         self.intent_analyzer = IntentAnalyzer()
         self.short_term_memory = ShortTermMemory(max_turns=config.max_short_term_turns)
+        self.conversation_store = ConversationStore(config.database_path)
+        self.current_conversation = self.conversation_store.latest_or_create()
+        self._load_conversation_context(self.current_conversation.conversation_id)
         self.performance_analyzer = PerformanceAnalyzer(config.database_path)
         self.model_registry = ModelRegistry.from_config(config)
         self.model_selector = ModelSelector(self.model_registry)
@@ -172,6 +176,8 @@ class AgentRuntime:
             memory_hits=memory_hits,
         )
         self.short_term_memory.add_turn("user", user_input)
+        self.conversation_store.add_message(self.current_conversation.conversation_id, "user", user_input)
+        self._refresh_current_conversation()
         agent_response = self._select_agent(intent).respond(user_input, context)
         guidance = ""
         if agent_response is not None and hasattr(agent_response, "text"):
@@ -242,7 +248,60 @@ class AgentRuntime:
             "tools": self.tool_registry.list_tools(),
             "allowed_access": sorted(level.value for level in self.tool_registry.permission_policy.allowed),
             "interaction_logging_enabled": self.config.interaction_logging_enabled,
+            "current_conversation": self.current_conversation.to_dict(),
         }
+
+    def new_conversation(self, title: str = "New conversation") -> Conversation:
+        self.current_conversation = self.conversation_store.create(title)
+        self.short_term_memory.clear()
+        return self.current_conversation
+
+    def switch_conversation(self, conversation_id: str) -> Conversation:
+        conversation = self.conversation_store.get(conversation_id)
+        if conversation is None:
+            raise KeyError(f"Unknown conversation: {conversation_id}")
+        self.current_conversation = conversation
+        self._load_conversation_context(conversation_id)
+        return conversation
+
+    def list_conversations(self, limit: int = 50) -> list[Conversation]:
+        return self.conversation_store.list(limit=limit)
+
+    def search_conversations(self, query: str, limit: int = 20) -> list[dict[str, str]]:
+        return self.conversation_store.search(query, limit=limit)
+
+    def pin_conversation(self, conversation_id: str, pinned: bool = True) -> bool:
+        changed = self.conversation_store.set_pinned(conversation_id, pinned)
+        if changed and self.current_conversation.conversation_id == conversation_id:
+            refreshed = self.conversation_store.get(conversation_id)
+            if refreshed is not None:
+                self.current_conversation = refreshed
+        return changed
+
+    def rename_conversation(self, conversation_id: str, title: str) -> bool:
+        changed = self.conversation_store.rename(conversation_id, title)
+        if changed and self.current_conversation.conversation_id == conversation_id:
+            refreshed = self.conversation_store.get(conversation_id)
+            if refreshed is not None:
+                self.current_conversation = refreshed
+        return changed
+
+    def delete_conversation(self, conversation_id: str) -> bool:
+        changed = self.conversation_store.delete(conversation_id)
+        if changed and self.current_conversation.conversation_id == conversation_id:
+            self.current_conversation = self.conversation_store.latest_or_create()
+            self._load_conversation_context(self.current_conversation.conversation_id)
+        return changed
+
+    def export_conversation(self, output_path: Path, conversation_id: str | None = None) -> Path:
+        target_id = conversation_id or self.current_conversation.conversation_id
+        return self.conversation_store.export_markdown(target_id, output_path)
+
+    def _load_conversation_context(self, conversation_id: str) -> None:
+        self.short_term_memory.clear()
+        messages = self.conversation_store.messages(conversation_id, limit=self.config.max_short_term_turns)
+        for message in messages:
+            self.short_term_memory.add_turn(message.role, message.content)
 
     def _collect_memory_hits(self, user_input: str, intent: IntentResult) -> dict[str, Any]:
         return {
@@ -320,6 +379,8 @@ class AgentRuntime:
         duration_ms = (time.perf_counter() - started) * 1000
         task_trace = execution.trace
         self.short_term_memory.add_turn("assistant", final_text)
+        self.conversation_store.add_message(self.current_conversation.conversation_id, "assistant", final_text)
+        self._refresh_current_conversation()
         self.vector_store.add_text("conversation", user_input, {"role": "user", "kind": intent.kind})
         self.vector_store.add_text("conversation", final_text, {"role": "assistant", "kind": intent.kind})
         self.workflow_memory.record_trace(task_trace, success=execution.success)
@@ -345,6 +406,11 @@ class AgentRuntime:
                 }
             )
         return anomalies
+
+    def _refresh_current_conversation(self) -> None:
+        refreshed = self.conversation_store.get(self.current_conversation.conversation_id)
+        if refreshed is not None:
+            self.current_conversation = refreshed
 
     def _forward_progress_update(self, event: dict[str, Any]) -> None:
         self._emit_status(

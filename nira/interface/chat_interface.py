@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from pathlib import Path
 from queue import Empty, Queue
 from typing import TYPE_CHECKING, Any
 
@@ -215,7 +216,11 @@ class ChatInterface:
             self.root.mainloop()
 
     def run_console(self) -> None:
-        print("NIRA Local Runtime ready. Type /exit to quit, /health for runtime status, /voice for voice input.")
+        current = self.manager.runtime.current_conversation
+        print(
+            "NIRA Local Runtime ready. "
+            f"Conversation {current.conversation_id} ({current.title}). Type /help for commands."
+        )
         while True:
             try:
                 user_input = input("\nYou> ").strip()
@@ -228,13 +233,100 @@ class ChatInterface:
             if user_input == "/exit":
                 self.manager.shutdown()
                 break
-            if user_input == "/health":
-                print(self.manager.runtime.system_metrics.snapshot())
-                continue
-            if user_input == "/voice":
-                self.manager.handle_voice_input()
+            if user_input.startswith("/") and self._handle_console_command(user_input):
                 continue
             self.manager.handle_user_input(user_input)
+
+    def _handle_console_command(self, command: str) -> bool:
+        runtime = self.manager.runtime
+        name, _, raw_value = command.partition(" ")
+        value = raw_value.strip()
+        if name == "/help":
+            print(
+                "Commands: /health, /new [title], /sessions, /use <id>, /search <text>, "
+                "/pin [id], /unpin [id], /rename <title>, /export <path>, /delete <id>, "
+                "/privacy, /voice, /exit"
+            )
+            return True
+        if name == "/health":
+            print(runtime.health())
+            return True
+        if name == "/new":
+            conversation = runtime.new_conversation(value or "New conversation")
+            print(f"Started {conversation.conversation_id}: {conversation.title}")
+            return True
+        if name == "/sessions":
+            for item in runtime.list_conversations():
+                marker = "*" if item.pinned else " "
+                active = " active" if item.conversation_id == runtime.current_conversation.conversation_id else ""
+                print(f"{marker} {item.conversation_id}  {item.title}  messages={item.message_count}{active}")
+            return True
+        if name == "/use":
+            if not value:
+                print("Usage: /use <conversation-id>")
+                return True
+            try:
+                conversation = runtime.switch_conversation(value)
+            except KeyError as exc:
+                print(str(exc))
+            else:
+                print(f"Using {conversation.conversation_id}: {conversation.title}")
+            return True
+        if name == "/search":
+            if not value:
+                print("Usage: /search <text>")
+                return True
+            matches = runtime.search_conversations(value)
+            if not matches:
+                print("No matching conversation content.")
+            for match in matches:
+                preview = " ".join(match["content"].split())[:96]
+                print(f"{match['conversation_id']}  {match['role']}: {preview}")
+            return True
+        if name in {"/pin", "/unpin"}:
+            conversation_id = value or runtime.current_conversation.conversation_id
+            changed = runtime.pin_conversation(conversation_id, pinned=name == "/pin")
+            print(("Updated " if changed else "Unknown ") + f"conversation {conversation_id}.")
+            return True
+        if name == "/rename":
+            if not value:
+                print("Usage: /rename <new title>")
+                return True
+            runtime.rename_conversation(runtime.current_conversation.conversation_id, value)
+            print(f"Renamed current conversation to: {value}")
+            return True
+        if name == "/export":
+            if not value:
+                print("Usage: /export <markdown-path>")
+                return True
+            try:
+                output = runtime.export_conversation(Path(value))
+            except (KeyError, OSError) as exc:
+                print(f"Export failed: {exc}")
+            else:
+                print(f"Exported conversation to {output}")
+            return True
+        if name == "/delete":
+            conversation_id = value or runtime.current_conversation.conversation_id
+            phrase = input(f"Type DELETE {conversation_id} to permanently delete this local conversation: ").strip()
+            if phrase != f"DELETE {conversation_id}":
+                print("Deletion cancelled.")
+                return True
+            changed = runtime.delete_conversation(conversation_id)
+            print(("Deleted " if changed else "Unknown ") + f"conversation {conversation_id}.")
+            return True
+        if name == "/privacy":
+            print(
+                f"State directory: {runtime.config.base_dir}\n"
+                f"Interaction training log enabled: {runtime.config.interaction_logging_enabled}\n"
+                "Conversation history is local SQLite data. Workspace writes, processes, and network tools require approval."
+            )
+            return True
+        if name == "/voice":
+            self.manager.handle_voice_input()
+            return True
+        print(f"Unknown command: {name}. Type /help.")
+        return True
 
     def open_panel(self) -> None:
         if self.root is None:
