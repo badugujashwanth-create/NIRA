@@ -1,29 +1,39 @@
 # Development guide
 
-## Purpose
-
-Modular local-first assistant runtime with planning, automation permissions, specialist agents, memory, and optional local LLM support.
-
-## Prerequisites
-
-Python 3.11+, pytest, requests, psutil, optional llama.cpp and desktop integrations.
-
-## Install
+## Environment
 
 ```powershell
-python -m venv .venv; .\.venv\Scripts\python -m pip install -e .
+python -m venv .venv
+.\.venv\Scripts\python -m pip install --upgrade pip
+.\.venv\Scripts\python -m pip install -e ".[dev]"
 ```
 
-## Run
+No model, key, or network service is needed for the core suite.
+
+## Run safely
 
 ```powershell
-.\.venv\Scripts\python -m nira
+.\.venv\Scripts\python -m nira --health --state-dir .\.local-state
+.\.venv\Scripts\python -m nira --console --workspace . --state-dir .\.local-state
 ```
 
-## Verify
+Use a disposable `--state-dir` and workspace for side-effect tests. Do not grant write, process, or network access merely to make a test pass.
 
-- Tests: `.\.venv\Scripts\python -m pytest -q`
-- Build: `Optional executable build is documented under `nira/scripts``
+## Verification
 
-See [TEST_REPORT.md](TEST_REPORT.md) for the latest audited results. Copy example environment files instead of committing real values. Generated dependencies, caches, logs, databases, and build output must remain untracked.
+```powershell
+.\.venv\Scripts\python -m pip check
+.\.venv\Scripts\python -m pytest -q
+.\.venv\Scripts\python -m compileall -q nira nira_agent local_llm main.py
+.\.venv\Scripts\pip-audit --skip-editable
+.\.venv\Scripts\python -m build
+```
 
+## Change rules
+
+- Add every canonical tool through `ToolRegistry` with an explicit access class.
+- Test denied, callback-failure, invalid-path, and oversized-input cases.
+- Treat permission denial as final user intent, not a repairable failure.
+- Keep user content out of default logs and security evidence.
+- Update README, API, security, tests, changelog, demo, and version claims together.
+- Optional integrations must fail honestly when their dependency/service is absent.

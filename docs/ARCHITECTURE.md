@@ -1,31 +1,40 @@
-# NIRA Local AI Assistant architecture
+# Architecture
 
-Modular local-first assistant runtime with planning, automation permissions, specialist agents, memory, and optional local LLM support.
-
-## System view
+NIRA v0.4 uses `nira.core.AgentRuntime` as the canonical lifecycle for desktop, console, CLI, and Python callers.
 
 ```mermaid
 flowchart LR
-  N0[CLI/user] --> N1
-  N1[Coordinator and planner] --> N2
-  N2[Specialist agents] --> N3
-  N3[Permissioned tool registry] --> N4
-  N4[Memory and optional local LLM]
+  User --> Interface[Desktop / console / direct CLI]
+  Interface --> Runtime[AgentRuntime]
+  Runtime --> Intent[Intent and role routing]
+  Intent --> Planner[Task graph planner]
+  Planner --> Executor[TaskGraphExecutor]
+  Executor --> Registry[ToolRegistry]
+  Registry --> Policy{ToolPermissionPolicy}
+  Policy -->|read/state| Tool[Bounded tool]
+  Policy -->|write/process/network| Approval[Explicit grant or approve once]
+  Approval -->|deny| Stop[Safe failure]
+  Approval -->|allow| Tool
+  Runtime --> Memory[(SQLite stores)]
+  Runtime --> Model[ModelManager]
+  Model --> Offline[Deterministic fallback]
+  Model --> Llama[Optional llama.cpp endpoint]
 ```
 
-## Component boundaries
+## Responsibilities
 
-- **CLI/user:** initiates the primary workflow.
-- **Coordinator and planner:** owns one stage of the request or interaction flow.
-- **Specialist agents:** owns one stage of the request or interaction flow.
-- **Permissioned tool registry:** owns one stage of the request or interaction flow.
-- **Memory and optional local LLM:** provides the terminal integration or persistence boundary.
+- `AgentRuntime`: intent, context, memory retrieval, plan, execution, reflection, persistence, metrics.
+- `TaskGraphExecutor`: dependency order, progress, one narrow repair, stop/block behavior.
+- `ToolRegistry`: canonical authorization point before `Tool.run`.
+- `ToolPermissionPolicy`: access grants, approve-once callback, bounded argument-free decision history.
+- `resolve_within_root`: path containment for workspace and state boundaries.
+- `ConversationStore`: named local sessions and export/delete lifecycle.
+- `ModelManager`: optional model routing, cache limits, and latency evidence.
 
-## Runtime and trust boundaries
+## Trust boundaries
 
-Voice, OCR, browser, and local-model features require optional system dependencies and are not validated by the core test suite. Inputs crossing a network, filesystem, provider, or database boundary should be validated and logged without sensitive values. Optional integrations must fail clearly rather than being presented as successful.
+Workspace paths, commands, URLs, model endpoints, exported files, and optional OS features are untrusted. Capability selection never grants authority. Interaction logs and network/model access are opt-in.
 
-## Technology
+## Canonical versus legacy
 
-Python 3.11+, pytest, requests, psutil, optional llama.cpp and desktop integrations.
-
+Historical automation, encrypted memory, PyQt overlay, and routing modules remain available through the `nira_agent` compatibility namespace. They are not on the v0.4 canonical request path. Some require `legacy-security` or `legacy-qt` extras and are not covered by the 48-test core contract.

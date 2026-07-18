@@ -5,13 +5,15 @@ Thank you for improving this project. Keep changes focused, explain user-visible
 ## Development flow
 
 1. Fork or branch from the current default branch.
-2. Install dependencies with `python -m venv .venv; .\.venv\Scripts\python -m pip install -e .`.
+2. Install dependencies with `python -m venv .venv; .\.venv\Scripts\python -m pip install -e ".[dev]"`.
 3. Make the smallest coherent change.
 4. Run the relevant checks from [docs/TEST_REPORT.md](docs/TEST_REPORT.md).
 5. Update documentation when commands, configuration, or behavior change.
 6. Open a pull request with the problem, solution, verification evidence, and any limitations.
 
 Use Conventional Commit-style subjects where practical, such as `fix: validate empty requests` or `docs: clarify local setup`.
+
+Every canonical tool must declare read, state, workspace-write, process, or network access. Include tests proving denied access cannot execute the tool and cannot enter an automatic repair loop. Keep demo/model/optional-integration claims bounded to evidence.
 
 ## Security
 

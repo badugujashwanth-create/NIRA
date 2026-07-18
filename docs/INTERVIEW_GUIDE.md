@@ -1,41 +1,25 @@
-# NIRA interview guide
+# Interview guide
 
-## Tell me about this project.
+## Short pitch
 
-NIRA is a local-first Python assistant runtime with planning, specialist capabilities, memory, permission checks, and optional llama.cpp inference.
+NIRA is a local-first Python assistant where planning and capability are separate from authorization. It works in honest offline mode, stores controlled sessions locally, exposes bounded read tools, and asks before writes, processes, or network calls.
 
-## Why did you build it?
+## Defensible deep dives
 
-It explores how assistant tools can remain understandable and permissioned without requiring a cloud model for the core runtime.
+**Why enforce in the registry?** Every canonical task tool crosses that boundary, so permission is structural rather than prompt-based.
 
-## What was your contribution?
+**Why permit NIRA state?** Sessions and proposal artifacts are core product state. The user workspace has a larger blast radius and remains separately gated.
 
-Discuss the repository's orchestration, permission/risk boundary, local-first packaging, optional integrations, tests, and portable documentation. Do not imply that every optional voice, OCR, browser, or model feature was verified.
+**Why no retry after denial?** A refusal is user intent, not a technical error.
 
-## What was the hardest technical problem?
+**Why an offline fallback?** Health, sessions, inspection, planning, and safety remain demonstrable without inventing model output.
 
-Designing graceful behavior when models or system integrations are unavailable while preventing tool execution from becoming implicitly authorized.
+**What would make it a finished flagship?** One measured model profile, memory lifecycle UI, retrieval evaluation/citations, safe revise/retry, and manual accessibility evidence.
 
-## How does the architecture work?
+## Claims to avoid
 
-The Python package separates orchestration, specialists, tools, memory, research/document helpers, risk decisions, and model adapters. The core test path does not require loading a local model.
+Do not call it production-ready, fully autonomous, fully accessible, encrypted by default, cross-platform, or a verified local LLM product.
 
-## What would you improve?
+## Demo order
 
-Add integration tests for optional adapters, structured execution traces, interactive permission prompts, supported-platform packaging, and adversarial prompt-injection coverage.
-
-## How did you test it?
-
-The editable install and 32 pytest tests pass in CI. Optional environment-dependent integrations require separate tests and are documented as unverified.
-
-## What are its security limitations?
-
-Local tools can still access sensitive files or networks. Permissions, prompt data, model provenance, and browser/system actions need explicit user control and audit evidence.
-
-## How would you scale it?
-
-Keep orchestration stateless where possible, isolate model workers, persist scoped memory explicitly, queue long tools, and enforce per-tool permissions and resource limits.
-
-## What did you learn?
-
-A useful agent architecture separates interpretation, planning, authorization, execution, and evidence rather than collapsing them into one model response.
+Health and architecture → session recovery → bounded inspection/read → process approval and denial → decision evidence → tests/package smoke → limitations.
