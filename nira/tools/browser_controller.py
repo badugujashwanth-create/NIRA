@@ -2,12 +2,15 @@ from __future__ import annotations
 
 from typing import Any
 
-from nira.tools.base import Tool, ToolResult
+from nira.tools.base import Tool, ToolAccess, ToolResult
 
 
 class BrowserController(Tool):
     name = "browse_sources"
     description = "Inspect local sources and optionally fetch allowed web content."
+
+    def access_for(self, args: dict[str, Any]) -> ToolAccess:
+        return ToolAccess.NETWORK if bool(args.get("use_web", False)) else ToolAccess.READ
 
     def __init__(self, source_analyzer, web_enabled: bool = False) -> None:
         self.source_analyzer = source_analyzer

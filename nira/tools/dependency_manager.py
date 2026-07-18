@@ -5,12 +5,13 @@ import re
 from pathlib import Path
 from typing import Any
 
-from nira.tools.base import Tool, ToolResult
+from nira.tools.base import Tool, ToolAccess, ToolResult
 
 
 class DependencyManager(Tool):
     name = "add_dependency"
     description = "Add a dependency to a local requirements or package manifest."
+    access = ToolAccess.WORKSPACE_WRITE
 
     def run(self, args: dict[str, Any], state) -> ToolResult:
         dependency = str(args.get("name") or args.get("dependency") or "").strip()

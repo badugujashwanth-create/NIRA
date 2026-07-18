@@ -36,8 +36,13 @@ class IntelligenceTests(unittest.TestCase):
         )
         self.assertEqual(
             [task.tool for task in plan],
-            ["analyze_project", "add_dependency", "update_config", "generate_code", "run_build"],
+            ["analyze_project", "generate_code", "run_build"],
         )
+
+    def test_plain_chat_never_plans_a_file_mutation(self) -> None:
+        planner = Planner(planner_agent=None)
+        plan = planner.build_plan("Hello NIRA", IntentAnalyzer().analyze("Hello NIRA"), {}, {})
+        self.assertEqual(plan, [])
 
     def test_planner_emits_research_task_graph(self) -> None:
         planner = Planner(planner_agent=None)

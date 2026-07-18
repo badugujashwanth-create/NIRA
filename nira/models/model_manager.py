@@ -27,6 +27,7 @@ class ModelManager:
         idle_ttl_sec: int = 900,
         default_model: Any | None = None,
         model_factory: ModelFactory | None = None,
+        enabled: bool = True,
     ) -> None:
         self.registry = registry
         self.performance_analyzer = performance_analyzer
@@ -34,6 +35,7 @@ class ModelManager:
         self.idle_ttl_sec = max(30, idle_ttl_sec)
         self.default_model = default_model
         self.model_factory = model_factory or self._build_local_model
+        self.enabled = enabled
         self._loaded: dict[str, ManagedModelHandle] = {}
         self._last_generation_ms = 0.0
         self._last_embedding_ms = 0.0
@@ -57,6 +59,8 @@ class ModelManager:
         return model
 
     def generate(self, model_name: str, prompt: str) -> ModelResponse:
+        if not self.enabled:
+            return ModelResponse(text="", provider="offline", raw={"reason": "local_model_disabled"})
         started = time.perf_counter()
         model = self.load_model(model_name)
         try:
@@ -72,6 +76,8 @@ class ModelManager:
         return result
 
     def embed_text(self, text: str, model_name: str = "embedding_model") -> list[float] | None:
+        if not self.enabled:
+            return None
         started = time.perf_counter()
         model = self.load_model(model_name)
         try:
@@ -113,6 +119,7 @@ class ModelManager:
             "loaded_count": len(self._loaded),
             "last_generation_ms": round(self._last_generation_ms, 2),
             "last_embedding_ms": round(self._last_embedding_ms, 2),
+            "enabled": self.enabled,
         }
 
     def _trim_cache(self) -> None:

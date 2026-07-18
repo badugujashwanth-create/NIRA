@@ -34,6 +34,8 @@ from nira.research.topic_planner import TopicPlanner
 from nira.task_graph.executor import ExecutionSummary, TaskGraphExecutor
 from nira.task_graph.planner import TaskGraphPlanner
 from nira.tools import ToolRegistry, build_default_registry
+from nira.security.tool_policy import ApprovalCallback, ToolPermissionPolicy
+from nira.tools.base import ToolAccess
 from nira.training.interaction_logger import InteractionLogger
 from nira.workflows.pattern_detector import PatternDetector
 from nira.workflows.workflow_engine import WorkflowEngine
@@ -73,6 +75,7 @@ class AgentRuntime:
         config: NiraConfig,
         model: LocalModel | None = None,
         tool_registry: ToolRegistry | None = None,
+        permission_policy: ToolPermissionPolicy | None = None,
     ) -> None:
         self.config = config
         self.model = model
@@ -88,6 +91,7 @@ class AgentRuntime:
             max_cached_models=config.max_cached_models,
             idle_ttl_sec=config.model_idle_ttl_sec,
             default_model=model,
+            enabled=config.local_model_enabled or model is not None,
         )
         self.planning_model = RoutedModelClient(self.model_manager, self.model_selector, default_task_type="planning", role="planner")
         self.coding_model = RoutedModelClient(self.model_manager, self.model_selector, default_task_type="coding", role="coding")
@@ -143,6 +147,7 @@ class AgentRuntime:
             research_memory=self.research_memory,
             vector_store=self.vector_store,
             knowledge_graph=self.knowledge_graph,
+            permission_policy=permission_policy,
         )
         self.task_executor = TaskGraphExecutor(self.tool_registry, self.reflection_engine)
         self._status_listeners: list[RuntimeListener] = []
@@ -219,6 +224,25 @@ class AgentRuntime:
 
     def shutdown(self) -> None:
         self.model_manager.close()
+
+    def set_approval_callback(self, callback: ApprovalCallback | None) -> None:
+        self.tool_registry.set_approval_callback(callback)
+
+    def grant_tool_access(self, *access_levels: ToolAccess) -> None:
+        self.tool_registry.grant(*access_levels)
+
+    def health(self) -> dict[str, Any]:
+        return {
+            "status": "ready",
+            "mode": "local-model" if self.config.local_model_enabled else "deterministic-offline",
+            "local_model_enabled": self.config.local_model_enabled,
+            "workspace": str(Path.cwd()),
+            "state_directory": str(self.config.base_dir),
+            "database_ready": self.config.database_path.exists(),
+            "tools": self.tool_registry.list_tools(),
+            "allowed_access": sorted(level.value for level in self.tool_registry.permission_policy.allowed),
+            "interaction_logging_enabled": self.config.interaction_logging_enabled,
+        }
 
     def _collect_memory_hits(self, user_input: str, intent: IntentResult) -> dict[str, Any]:
         return {
@@ -308,17 +332,18 @@ class AgentRuntime:
             self.performance_analyzer.summary(),
             execution,
         )
-        self.interaction_logger.log(
-            {
-                "input": user_input,
-                "response": final_text,
-                "intent": intent.to_dict(),
-                "trace": task_trace,
-                "results": [result.to_dict() for result in execution.results],
-                "anomalies": anomalies,
-                "duration_ms": duration_ms,
-            }
-        )
+        if self.config.interaction_logging_enabled:
+            self.interaction_logger.log(
+                {
+                    "input": user_input,
+                    "response": final_text,
+                    "intent": intent.to_dict(),
+                    "trace": task_trace,
+                    "results": [result.to_dict() for result in execution.results],
+                    "anomalies": anomalies,
+                    "duration_ms": duration_ms,
+                }
+            )
         return anomalies
 
     def _forward_progress_update(self, event: dict[str, Any]) -> None:

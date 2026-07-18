@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "nira-local-runtime"
 version = "0.3.0"
-description = "Autonomous modular AI assistant runtime for NIRA"
+description = "Local-first AI assistant runtime with explicit tool permissions"
 requires-python = ">=3.11"
 dependencies = [
   "requests>=2.32.0",
@@ -13,6 +13,9 @@ dependencies = [
   "numpy>=1.26.0",
   "pytest>=8.0.0",
 ]
+
+[project.scripts]
+nira = "nira.main:main"
 
 [tool.setuptools]
 py-modules = ["main"]

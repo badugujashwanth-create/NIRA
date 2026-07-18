@@ -1,4 +1,5 @@
-from nira.tools.base import Tool, ToolResult
+from nira.security.tool_policy import ToolPermissionPolicy
+from nira.tools.base import Tool, ToolAccess, ToolResult
 from nira.tools.browser_controller import BrowserController
 from nira.tools.build_runner import BuildRunner
 from nira.tools.code_generator import CodeGenerator
@@ -29,8 +30,9 @@ def build_default_registry(
     research_memory,
     vector_store,
     knowledge_graph,
+    permission_policy: ToolPermissionPolicy | None = None,
 ) -> ToolRegistry:
-    registry = ToolRegistry()
+    registry = ToolRegistry(permission_policy=permission_policy)
     registry.register(FileManager())
     registry.register(ProjectAnalyzer())
     registry.register(DependencyManager())
@@ -52,5 +54,7 @@ __all__ = [
     "Tool",
     "ToolRegistry",
     "ToolResult",
+    "ToolAccess",
+    "ToolPermissionPolicy",
     "build_default_registry",
 ]

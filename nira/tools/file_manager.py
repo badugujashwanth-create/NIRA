@@ -5,12 +5,16 @@ from pathlib import Path
 from typing import Any
 
 from nira.core.path_utils import PathSecurityError, resolve_within_root, state_workspace_root
-from nira.tools.base import Tool, ToolResult
+from nira.tools.base import Tool, ToolAccess, ToolResult
 
 
 class FileManager(Tool):
     name = "file_manager"
     description = "Read, write, list, or create local files and directories."
+
+    def access_for(self, args: dict[str, Any]) -> ToolAccess:
+        action = str(args.get("action", "read")).lower()
+        return ToolAccess.READ if action in {"read", "list"} else ToolAccess.WORKSPACE_WRITE
 
     def run(self, args: dict[str, Any], state) -> ToolResult:
         action = str(args.get("action", "read")).lower()
@@ -56,6 +60,7 @@ class FileManager(Tool):
 class UpdateConfigTool(Tool):
     name = "update_config"
     description = "Update a local JSON, env, or plain-text config file."
+    access = ToolAccess.WORKSPACE_WRITE
 
     def run(self, args: dict[str, Any], state) -> ToolResult:
         try:

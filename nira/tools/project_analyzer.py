@@ -4,12 +4,13 @@ from pathlib import Path
 from typing import Any
 
 from nira.core.path_utils import PathSecurityError, resolve_within_root, state_workspace_root
-from nira.tools.base import Tool, ToolResult
+from nira.tools.base import Tool, ToolAccess, ToolResult
 
 
 class ProjectAnalyzer(Tool):
     name = "analyze_project"
     description = "Inspect the current repository for files, manifests, and source counts."
+    access = ToolAccess.READ
 
     def run(self, args: dict[str, Any], state) -> ToolResult:
         try:

@@ -40,6 +40,14 @@ class ReflectionEngine:
                     if concepts:
                         summary = f"{summary} Concepts: {concepts}."
                     return ReflectionReport(summary=summary)
+                if guidance:
+                    return ReflectionReport(summary=guidance)
+                return ReflectionReport(
+                    summary=(
+                        "The local model is disabled or unavailable. NIRA remains ready for "
+                        "deterministic project inspection, local memory, and explicitly approved workflows."
+                    )
+                )
 
             completed = sum(1 for result in execution.results if result.ok)
             summary = f"Intent `{intent_kind}` completed with {completed} successful task(s)."
