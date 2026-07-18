@@ -2,7 +2,7 @@
 
 > A local-first Python desktop assistant that plans and remembers useful work while keeping filesystem, process, and network side effects under explicit user control.
 
-**Status:** v0.5.0 release candidate on `product-integration-v0.5`. Deterministic offline mode, persistent sessions, bounded tools, desktop permissions, the integrated Operations Center, and 51 tests are verified. A real local model is configurable but has not been verified on this machine.
+**Status:** v0.5.0 is the current release. Deterministic offline mode, persistent sessions, bounded tools, desktop permissions, the integrated Operations Center, and 51 tests are verified. A real local model is configurable but has not been verified on this machine.
 
 [Architecture](docs/ARCHITECTURE.md) · [Security review](docs/SECURITY_REVIEW.md) · [Test report](docs/TEST_REPORT.md) · [Case study](docs/CASE_STUDY.md) · [Interview guide](docs/INTERVIEW_GUIDE.md)
 
@@ -118,7 +118,7 @@ See [the API/CLI reference](docs/API.md) and [development guide](docs/DEVELOPMEN
 .\.venv\Scripts\python -m build
 ```
 
-Current evidence: **51 tests passed**, dependencies are consistent, and the v0.5 package, dependency, secret, and isolated-install gates are completed before release.
+Current evidence: **51 tests passed**, dependencies are consistent, and the v0.5 package, dependency, secret, and isolated-install release gates are complete.
 
 ## Privacy and security
 
