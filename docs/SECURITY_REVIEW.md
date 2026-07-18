@@ -14,6 +14,7 @@ Reviewed: 18 July 2026. Scope: canonical v0.4 runtime, not optional legacy integ
 - Interaction-training log is opt-in.
 - Permission evidence omits raw arguments.
 - Dependency audit reported no known vulnerabilities in the audited environment.
+- Gitleaks v8.30.1 reported no leaks in the tracked current tree and no leaks across all 17 commits.
 
 ## Residual risks
 
@@ -23,4 +24,4 @@ Reviewed: 18 July 2026. Scope: canonical v0.4 runtime, not optional legacy integ
 - Real model prompt-injection and hallucination behavior is unmeasured.
 - Optional PyQt/cryptography/voice modules are outside the core contract.
 
-Full-history secret scanning is a release gate. Do not store tokens in environment examples, conversations used for demos, model files, or repository artifacts.
+The raw working-directory scan found 206 generic-key patterns only inside ignored third-party `.venv` fixtures; the scan was repeated against a `git archive` of tracked `HEAD` and returned clean. Do not store tokens in environment examples, conversations used for demos, model files, or repository artifacts.

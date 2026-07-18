@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 
-from nira.main import main
+from nira.main import build_parser, main
 
 
 def test_health_command_reports_offline_safe_defaults(tmp_path, capsys) -> None:
@@ -52,3 +52,9 @@ def test_read_file_rejects_path_escape(tmp_path, capsys) -> None:
     assert exit_code == 2
     assert result["ok"] is False
     assert "escapes allowed root" in result["output"]
+
+
+def test_full_demo_flag_is_explicit() -> None:
+    args = build_parser().parse_args(["--full-demo"])
+    assert args.full_demo is True
+    assert args.ui_audit_demo is False

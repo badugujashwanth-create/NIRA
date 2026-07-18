@@ -2,15 +2,15 @@
 
 > A local-first Python desktop assistant that plans and remembers useful work while keeping filesystem, process, and network side effects under explicit user control.
 
-**Status:** v0.4.0 release candidate on `product-completion-2026`. Deterministic offline mode, persistent sessions, bounded tools, desktop permissions, 48 tests, and wheel installation are verified. A real local model is configurable but has not been verified on this machine.
+**Status:** v0.4.0 release candidate on `product-completion-2026`. Deterministic offline mode, persistent sessions, bounded tools, desktop permissions, 49 tests, and wheel installation are verified. A real local model is configurable but has not been verified on this machine.
 
 [Architecture](docs/ARCHITECTURE.md) · [Security review](docs/SECURITY_REVIEW.md) · [Test report](docs/TEST_REPORT.md) · [Case study](docs/CASE_STUDY.md) · [Interview guide](docs/INTERVIEW_GUIDE.md)
 
 ## Demo
 
-![NIRA desktop permission workflow](docs/design/verification/03-permission-request.png)
+[![NIRA v0.4 guided desktop walkthrough](docs/demo/demo-thumbnail.png)](docs/demo/demo.webm)
 
-The current desktop flow has five inspected screenshots in [the UI/UX audit](docs/design/UI_UX_AUDIT.md). The final v0.4 walkthrough is being re-recorded from the current build and will run for at least three minutes; the target is approximately four minutes with captions.
+[Watch the full 4:05 walkthrough](docs/demo/demo.webm) or read the [captions](docs/demo/demo-captions.vtt). The recording exercises runtime health, offline chat, persistent conversations, bounded read tools, path containment, default-deny permissions, one-time approval, evidence, and known limits. Seven milestone frames and machine-readable metadata are retained in [demo verification](docs/demo/verification/).
 
 ## Problem and users
 
@@ -69,7 +69,7 @@ nira/memory/        conversations and retrieval stores
 nira/interface/     Tk desktop, console, progress, notifications
 nira/models/        model registry, routing, llama.cpp adapter
 local_llm/          optional managed llama.cpp integration
-tests/              48 automated tests
+tests/              49 automated tests
 docs/               product, security, test, design, and demo evidence
 ```
 
@@ -116,7 +116,7 @@ See [the API/CLI reference](docs/API.md) and [development guide](docs/DEVELOPMEN
 .\.venv\Scripts\python -m build
 ```
 
-Current evidence: **48 tests passed**, dependencies are consistent, no known dependency vulnerabilities were found in the audited environment, and the v0.4 wheel returned healthy JSON from a clean virtual environment outside the repository.
+Current evidence: **49 tests passed**, dependencies are consistent, no known dependency vulnerabilities or tracked/history secrets were found in the audited environment, and the v0.4 wheel returned healthy JSON from a clean virtual environment outside the repository.
 
 ## Privacy and security
 

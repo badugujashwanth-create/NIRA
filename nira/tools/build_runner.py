@@ -49,4 +49,4 @@ class BuildRunner(Tool):
 
     @staticmethod
     def _detect_command(cwd: Path) -> str:
-        return "python -m compileall ."
+        return "python -m compileall -q nira nira_agent local_llm main.py"

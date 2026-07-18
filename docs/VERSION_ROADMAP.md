@@ -2,7 +2,7 @@
 
 ## v0.4 - Permission-bound local prototype
 
-Canonical runtime, offline mode, local sessions, bounded tools, explicit side effects, 48 tests, distributable wheel, current evidence.
+Canonical runtime, offline mode, local sessions, bounded tools, explicit side effects, 49 tests, distributable wheel, current evidence.
 
 ## v0.5 - Observable local intelligence
 

@@ -1,0 +1,12 @@
+{
+    "generated_at_utc":  "2026-07-18T17:15:38.1170747Z",
+    "duration_seconds":  245.008,
+    "width":  1280,
+    "height":  720,
+    "video_codec":  "vp9",
+    "audio_codec":  "opus",
+    "captions":  "demo-captions.vtt",
+    "sha256":  "2d9d0253498df3635c84935ab5142a2fe5cf88314a39ff2218b0f03afeb0d394",
+    "bytes":  4103979,
+    "verification_frames":  7
+}

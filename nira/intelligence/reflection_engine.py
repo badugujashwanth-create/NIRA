@@ -64,7 +64,7 @@ class ReflectionEngine:
     def suggest_repair(self, tool_name: str, args: dict[str, object], output: str) -> dict[str, object]:
         if tool_name == "run_build" and "command" not in args:
             repaired = dict(args)
-            repaired["command"] = "python -m compileall ."
+            repaired["command"] = "python -m compileall -q nira nira_agent local_llm main.py"
             return repaired
         if tool_name == "edit_document" and "path" not in args:
             repaired = dict(args)

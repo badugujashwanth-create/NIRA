@@ -8,11 +8,11 @@
 - [x] Two real bounded read tools.
 - [x] Default-deny side effects and approve once.
 - [x] Denial cannot auto-retry.
-- [x] 48 tests, compile, dependency integrity, wheel build, isolated smoke.
+- [x] 49 tests, compile, dependency integrity, wheel build, isolated smoke.
 - [x] Current desktop flow and accessibility limits documented.
-- [ ] Full repository documentation reviewed.
-- [ ] Current-tree and full-history secret scans recorded.
-- [ ] Minimum-three-minute authentic video inspected.
+- [x] Full repository documentation reviewed.
+- [x] Current-tree and full-history secret scans recorded.
+- [x] Minimum-three-minute authentic video inspected.
 - [ ] Pull request CI green and reviewed.
 - [ ] Merge, tag, and GitHub release complete.
 

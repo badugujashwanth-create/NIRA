@@ -1,16 +1,31 @@
 WEBVTT
 
-00:00.000 --> 00:05.000
-NIRA Local AI Assistant
+00:00.000 --> 00:18.000
+NIRA v0.4 is a local-first assistant with visible offline status, local storage, and explicit side-effect approval.
 
-00:05.000 --> 00:15.000
-The problem, intended user, and starting point.
+00:18.000 --> 00:45.000
+The real runtime reports healthy deterministic-offline mode. Chat works without pretending that a local model is running.
 
-00:15.000 --> 00:40.000
-A walkthrough of the primary workflow using safe demonstration data.
+00:45.000 --> 01:15.000
+Conversation history is local and user-controlled: search, open, pin, rename, export, and confirmed deletion.
 
-00:40.000 --> 00:51.000
-Architecture, technology boundaries, and verified behavior.
+01:15.000 --> 01:40.000
+The first real tool inspects this repository while excluding virtual environments, dependencies, caches, and build output.
 
-00:51.000 --> 01:00.800
-Current status, known limitation, and repository owner badugujashwanth-create.
+01:40.000 --> 02:00.000
+The second tool reads bounded workspace content. An attempted path escape is rejected without reading the outside file.
+
+02:00.000 --> 02:45.000
+A coding plan reaches process execution and pauses. Denial is the safe default, stops the task, and is never auto-retried.
+
+02:45.000 --> 03:00.000
+Permission evidence stores the tool, access class, verdict, and reason—never the raw arguments.
+
+03:00.000 --> 03:30.000
+A second verification is approved once. The narrow compile command runs through the same registry and permission boundary.
+
+03:30.000 --> 03:48.000
+Release evidence: 49 tests, clean dependency and secret scans, and a wheel verified outside the source tree.
+
+03:48.000 --> 04:05.000
+Honest limitation: no real model profile, optional voice and PyQt outside core, and retrieval/accessibility evaluation still pending.

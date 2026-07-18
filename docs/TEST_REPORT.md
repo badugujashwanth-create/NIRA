@@ -5,13 +5,15 @@ Last local verification: 18 July 2026, Windows, Python 3.13, branch `product-com
 | Check | Result | Scope |
 | --- | --- | --- |
 | `pip check` | Pass | installed dependencies consistent |
-| `pytest -q` | **48 passed** | CLI, runtime, memory, task graph, policy, tools, models, interface |
+| `pytest -q` | **49 passed** | CLI, runtime, memory, task graph, policy, tools, models, interface |
 | `compileall` | Pass | canonical, compatibility, local-model packages |
 | `pip-audit --skip-editable` | Pass | no known dependency vulnerabilities; editable app skipped |
+| Gitleaks 8.30.1 tracked `HEAD` | Pass | no leaks in 1.94 MB tracked archive |
+| Gitleaks 8.30.1 full history | Pass | no leaks across 17 commits / 988 KB |
 | `python -m build` | Pass | sdist and v0.4 wheel |
 | clean-venv wheel install | Pass | installed outside source tree with runtime dependencies |
 | installed `python -m nira --health` | Pass | deterministic offline, read/state authority |
-| desktop capture flow | Pass | five accepted current-build screenshots |
+| desktop capture flow | Pass | five accepted audit screenshots plus seven inspected 4:05 demo frames |
 
 ## Important regressions covered
 

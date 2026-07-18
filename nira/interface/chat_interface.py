@@ -40,6 +40,11 @@ class ChatInterface:
         self._status_var = None
         self._conversation_title_var = None
         self.demo_mode = False
+        self.demo_permission_decisions: list[bool] = [False]
+        self.demo_permission_delay_ms = 6000
+        self._conversation_manager = None
+        self._conversation_search_var = None
+        self._conversation_refresh = None
 
     def ensure_window(self, start_hidden: bool = False) -> bool:
         if not self.gui_available or tk is None or scrolledtext is None:
@@ -455,10 +460,15 @@ class ChatInterface:
         def ask() -> None:
             dialog = tk.Toplevel(self.root)
             dialog.title("Nira permission request")
-            dialog.geometry("540x360")
+            self._center_dialog(dialog, 540, 360)
             dialog.resizable(False, False)
             dialog.configure(bg="#08111b")
             dialog.transient(self.root)
+            if self.demo_mode:
+                try:
+                    dialog.attributes("-topmost", True)
+                except tk.TclError:
+                    pass
             dialog.grab_set()
 
             shell = tk.Frame(dialog, bg="#08111b", padx=24, pady=22)
@@ -545,15 +555,17 @@ class ChatInterface:
             dialog.bind("<Escape>", lambda _event: choose(False))
             deny_button.focus_set()
             if self.demo_mode:
+                automatic_decision = self.demo_permission_decisions.pop(0) if self.demo_permission_decisions else False
+
                 def auto_deny() -> None:
                     try:
                         if dialog.winfo_exists():
-                            choose(False)
+                            choose(automatic_decision)
                     except tk.TclError:
                         return
 
                 self.root.after_idle(lambda: self._publish_demo_window("permission", dialog))
-                self.root.after(6000, auto_deny)
+                self.root.after(self.demo_permission_delay_ms, auto_deny)
 
         self.root.after(0, ask)
         return completed.wait(timeout=120) and decision["allowed"]
@@ -590,12 +602,26 @@ class ChatInterface:
     def _open_conversation_manager(self) -> None:
         if self.root is None or tk is None:
             return
+        if self._conversation_manager is not None:
+            try:
+                if self._conversation_manager.winfo_exists():
+                    self._conversation_manager.deiconify()
+                    self._conversation_manager.lift()
+                    return
+            except tk.TclError:
+                self._conversation_manager = None
         dialog = tk.Toplevel(self.root)
+        self._conversation_manager = dialog
         dialog.title("Nira Conversations")
-        dialog.geometry("680x430")
+        self._center_dialog(dialog, 680, 430)
         dialog.minsize(560, 360)
         dialog.configure(bg="#08111b")
         dialog.transient(self.root)
+        if self.demo_mode:
+            try:
+                dialog.attributes("-topmost", True)
+            except tk.TclError:
+                pass
 
         shell = tk.Frame(dialog, bg="#08111b", padx=18, pady=18)
         shell.pack(fill="both", expand=True)
@@ -648,6 +674,12 @@ class ChatInterface:
         listbox.pack(fill="both", expand=True)
         conversations: list[Any] = []
 
+        def close_dialog() -> None:
+            self._conversation_manager = None
+            self._conversation_search_var = None
+            self._conversation_refresh = None
+            dialog.destroy()
+
         def refresh(select_id: str | None = None) -> None:
             nonlocal conversations
             all_conversations = self.manager.runtime.list_conversations()
@@ -687,7 +719,7 @@ class ChatInterface:
                 return
             self.manager.runtime.switch_conversation(item.conversation_id)
             self._render_current_conversation()
-            dialog.destroy()
+            close_dialog()
 
         def pin() -> None:
             item = selected()
@@ -761,12 +793,33 @@ class ChatInterface:
             ).pack(side="left", padx=(0, 8))
         listbox.bind("<Double-Button-1>", lambda _event: switch())
         listbox.bind("<Return>", lambda _event: switch())
-        dialog.bind("<Escape>", lambda _event: dialog.destroy())
+        dialog.bind("<Escape>", lambda _event: close_dialog())
+        dialog.protocol("WM_DELETE_WINDOW", close_dialog)
         search_entry.bind("<KeyRelease>", lambda _event: refresh())
+        self._conversation_search_var = search_var
+        self._conversation_refresh = refresh
         refresh()
         search_entry.focus_set()
         if self.demo_mode and self.root is not None:
             self.root.after_idle(lambda: self._publish_demo_window("conversations", dialog))
+
+    def close_conversation_manager(self) -> None:
+        dialog = self._conversation_manager
+        if dialog is None:
+            return
+        try:
+            dialog.destroy()
+        except tk.TclError if tk is not None else RuntimeError:
+            pass
+        self._conversation_manager = None
+        self._conversation_search_var = None
+        self._conversation_refresh = None
+
+    def demo_filter_conversations(self, query: str) -> None:
+        if self._conversation_search_var is None or self._conversation_refresh is None:
+            return
+        self._conversation_search_var.set(query)
+        self._conversation_refresh()
 
     def _publish_demo_window(self, name: str, dialog: Any) -> None:
         if not self.demo_mode or tk is None:
@@ -777,6 +830,15 @@ class ChatInterface:
             path.write_text(str(handle), encoding="utf-8")
         except (OSError, ValueError, tk.TclError):
             return
+
+    def _center_dialog(self, dialog: Any, width: int, height: int) -> None:
+        if self.root is None:
+            dialog.geometry(f"{width}x{height}")
+            return
+        self.root.update_idletasks()
+        x = self.root.winfo_rootx() + max(0, (self.root.winfo_width() - width) // 2)
+        y = self.root.winfo_rooty() + max(0, (self.root.winfo_height() - height) // 2)
+        dialog.geometry(f"{width}x{height}+{x}+{y}")
 
     def _show_privacy(self) -> None:
         if messagebox is None:

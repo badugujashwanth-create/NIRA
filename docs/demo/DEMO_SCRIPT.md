@@ -1,16 +1,27 @@
-# NIRA Local AI Assistant demo script
+# NIRA v0.4 full demo script
 
-**Target length:** 60–90 seconds  
-**Format:** Terminal/desktop  
-**Data:** synthetic, repository-provided demo data, or public non-personal examples only
+**Required length:** at least 3:00
+
+**Recording target:** 4:05, 1280 × 720, real desktop window, narrated audio, WebVTT captions
+
+**Mode:** deterministic offline; no fake local-model output
 
 ## Walkthrough
 
-1. **Title (0–5s):** Show “NIRA Local AI Assistant” and its one-sentence problem statement.
-2. **Starting state (5–15s):** Show the clean entry point and identify the intended user.
-3. **Primary workflow (15–55s):** Start the local runtime; submit a harmless planning request; show the planned steps and permission boundary; run the core test suite; note optional local-LLM requirements.
-4. **Architecture (55–75s):** Show the architecture guide and name the main runtime boundaries.
-5. **Close (75–90s):** Display the project name, badugujashwanth-create, current status, and one honest limitation.
+1. **0:00-0:18 — Product boundary.** Show the empty desktop, visible composer, offline-safe label, local storage, and approval requirement.
+2. **0:18-0:45 — Runtime health and offline response.** Present real health fields and run “Hello NIRA.” Explain that usefulness remains without a model.
+3. **0:45-1:15 — Conversation control.** Open local sessions, show synthetic demo sessions, search for `permission`, clear search, and identify pin/rename/export/delete.
+4. **1:15-2:00 — Two real read tools.** Run project inspection, bounded README read, and an attempted `../outside.txt` read. Show actual result data and path rejection.
+5. **2:00-2:45 — Default-deny failure simulation.** Plan a coding task, show the process request, deny it, and show the failed task plus no-retry behavior.
+6. **2:45-3:30 — Permission evidence and approve once.** Show argument-free decision history, then approve one narrow compile verification. This is the only process allowed in the walkthrough.
+7. **3:30-4:05 — Engineering proof and limitations.** Show the 48-test/package/security evidence and state the unverified model, optional integrations, retrieval, and accessibility boundaries.
 
-Do not show environment files, tokens, browser bookmarks, notifications, real user accounts, or private URLs. Do not edit the footage to imply an integration succeeded when it did not.
+## Authenticity rules
 
+- Use a fresh temporary state directory.
+- Record only the NIRA window region.
+- Invoke NIRA's real runtime, conversation store, tools, and permission callback.
+- Use synthetic conversation labels and repository/public content only.
+- Never show a credential, environment value, private URL, personal file, notification, or browser.
+- Do not edit a denied or failed state to look successful.
+- Keep the real-model limitation visible and narrated.

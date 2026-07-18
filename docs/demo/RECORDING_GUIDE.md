@@ -1,18 +1,24 @@
 # Recording guide
 
-## Preparation
+## Automated authentic recording
 
-1. Install dependencies using docs/DEVELOPMENT.md.
-2. Copy example environment files and use only local or synthetic values.
-3. Start the demo with scripts/run-demo.ps1 or the component-specific command.
-4. Confirm the complete workflow manually before recording.
-5. Close notifications, unrelated applications, password managers, and personal browser profiles.
+```powershell
+.\scripts\record-demo.ps1
+```
 
-## Record
+The script verifies the full test suite, starts `python -m nira --full-demo` in a new temporary state directory, renders only windows owned by the NIRA process, generates Windows TTS narration when available, muxes WebM/Opus, creates a thumbnail and verification frames, and rejects output shorter than three minutes. Because it uses direct window rendering instead of desktop sampling, unrelated applications and virtual desktops cannot enter the video.
 
-This project needs a terminal or desktop recorder. Follow DEMO_SCRIPT.md; capture at 720p or 1080p and keep commands readable. The current machine did not have FFmpeg or a terminal recorder, so no video is claimed here.
+FFmpeg 8.1.2 is used from `NIRA_FFMPEG`, `PATH`, or a temporary GitHub release download from the Windows build provider linked by FFmpeg's official download page. It is not installed system-wide or committed.
 
-## Post-production
+## Manual preflight
 
-Trim loading time only; do not splice in fake success states. Add demo-captions.vtt. If FFmpeg is available, create a compressed MP4 and preview GIF, then verify size and readability. Never commit a large raw capture.
+- Confirm no `.env`, token, private URL, personal state directory, or browser content is visible.
+- Use deterministic offline mode; do not start an unverified model for the release demo.
 
+## Acceptance
+
+- Duration at least 180 seconds; target approximately 245 seconds.
+- 1280 x 720 output with VP9 video and Opus narration when available.
+- First, middle, permission, and closing frames inspected.
+- Captions cover the full story and match visible states.
+- No edit implies a denied action or unavailable model succeeded.

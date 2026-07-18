@@ -27,6 +27,11 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Run a timed real-behavior desktop walkthrough for local screenshot verification.",
     )
+    parser.add_argument(
+        "--full-demo",
+        action="store_true",
+        help="Run the complete timed desktop walkthrough used for the release video.",
+    )
     action = parser.add_mutually_exclusive_group()
     action.add_argument("--prompt", help="Run one request non-interactively and exit.")
     action.add_argument("--health", action="store_true", help="Print local runtime health as JSON and exit.")
@@ -74,6 +79,8 @@ def build_runtime(args: argparse.Namespace | None = None) -> AgentRuntime:
 
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
+    if args.ui_audit_demo and args.full_demo:
+        raise SystemExit("Choose either --ui-audit-demo or --full-demo, not both.")
     original_cwd = Path.cwd()
     runtime: AgentRuntime | None = None
     try:
@@ -103,7 +110,7 @@ def main(argv: list[str] | None = None) -> int:
         manager = InterfaceManager(runtime, prefer_gui=not args.console)
         if args.console:
             runtime.set_approval_callback(_console_approval)
-        manager.run(demo_mode=args.ui_audit_demo)
+        manager.run(demo_mode=args.ui_audit_demo, full_demo=args.full_demo)
         return 0
     finally:
         if runtime is not None:
