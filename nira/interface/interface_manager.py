@@ -25,13 +25,20 @@ class InterfaceManager:
             self.runtime.add_status_listener(self._handle_runtime_event)
         self.notifications.subscribe(self._dispatch_notification)
 
-    def run(self) -> None:
+    def run(self, demo_mode: bool = False) -> None:
         if self.chat.ensure_window(start_hidden=self.overlay.enabled):
+            self.chat.demo_mode = demo_mode
+            if hasattr(self.runtime, "set_approval_callback"):
+                self.runtime.set_approval_callback(self.chat.request_tool_approval)
             self.overlay.attach_root(self.chat.root)
             self.overlay.bind_open_chat(self.chat.open_panel)
             self.overlay.start()
             if not self.overlay.enabled:
                 self.chat.open_panel()
+            if demo_mode and self.chat.root is not None:
+                self.chat.root.after(3000, lambda: self.handle_user_input_async("Hello NIRA"))
+                self.chat.root.after(9000, lambda: self.handle_user_input_async("add authentication to this repo"))
+                self.chat.root.after(18000, self.chat._open_conversation_manager)
             self.chat.run_mainloop()
             return
         self.chat.run_console()
@@ -81,7 +88,12 @@ class InterfaceManager:
         self.overlay.show_message(response.text[:88])
         if response.anomalies:
             for anomaly in response.anomalies:
-                self.notifications.warning("Nira", anomaly)
+                message = (
+                    "Action stopped safely. Review the failed task before retrying."
+                    if anomaly == "execution_failure"
+                    else anomaly
+                )
+                self.notifications.warning("Nira", message)
         elif response.task_results:
             self.notifications.success("Nira", "Task completed successfully.")
         else:
@@ -95,6 +107,8 @@ class InterfaceManager:
 
     def shutdown(self) -> None:
         self.overlay.close()
+        if hasattr(self.runtime, "set_approval_callback"):
+            self.runtime.set_approval_callback(None)
         if hasattr(self.runtime, "remove_status_listener"):
             self.runtime.remove_status_listener(self._handle_runtime_event)
         self.runtime.shutdown()

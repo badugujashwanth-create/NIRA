@@ -98,3 +98,19 @@ def test_failed_approval_callback_defaults_to_denied() -> None:
 
     assert allowed is False
     assert reason == "approval_callback_failed"
+
+
+def test_denied_process_is_not_retried_as_a_repair() -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+        approvals: list[tuple[str, ToolAccess]] = []
+        runtime = AgentRuntime(config=NiraConfig(base_dir=Path(tmp)), model=FakeModel())
+        runtime.set_approval_callback(
+            lambda name, _args, access: approvals.append((name, access)) is not None
+        )
+
+        response = runtime.handle("add authentication to this repo")
+
+        assert approvals == [("run_build", ToolAccess.PROCESS)]
+        assert response.task_results[-1]["data"]["permission_required"] is True
+        assert "Blocked 'run_build'" in response.text
+        runtime.shutdown()

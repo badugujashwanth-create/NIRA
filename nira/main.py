@@ -22,6 +22,11 @@ def build_parser() -> argparse.ArgumentParser:
         description="NIRA local-first assistant with explicit tool permissions.",
     )
     parser.add_argument("--console", action="store_true", help="Use the console instead of the desktop window.")
+    parser.add_argument(
+        "--ui-audit-demo",
+        action="store_true",
+        help="Run a timed real-behavior desktop walkthrough for local screenshot verification.",
+    )
     action = parser.add_mutually_exclusive_group()
     action.add_argument("--prompt", help="Run one request non-interactively and exit.")
     action.add_argument("--health", action="store_true", help="Print local runtime health as JSON and exit.")
@@ -98,7 +103,7 @@ def main(argv: list[str] | None = None) -> int:
         manager = InterfaceManager(runtime, prefer_gui=not args.console)
         if args.console:
             runtime.set_approval_callback(_console_approval)
-        manager.run()
+        manager.run(demo_mode=args.ui_audit_demo)
         return 0
     finally:
         if runtime is not None:
