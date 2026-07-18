@@ -4,11 +4,15 @@
 
 Canonical runtime, offline mode, local sessions, bounded tools, explicit side effects, 49 tests, distributable wheel, current evidence.
 
-## v0.5 - Observable local intelligence
+## v0.5 - Integrated local operations
 
-Verified model profile/status UI, permission timeline, Markdown/code messages, memory retention/editing, SQLite migrations, and retrieval evaluation with citations.
+Canonical product snapshot, Operations Center, sequential agent trace, completed-plan evidence, model/tool/permission visibility, privacy-safe health, 51 tests, and an updated desktop walkthrough.
 
-## v0.6 - Reliable workflows
+## v0.6 - Trust and lifecycle controls
+
+Verified model profile, permission filtering/export, Markdown/code messages, memory retention/editing, SQLite migrations, retrieval evaluation with citations, and safe resume/recovery.
+
+## v0.7 - Reliable workflows
 
 Structured replanning, narrow attachments, state recovery, broader platform checks, and accessibility matrix.
 

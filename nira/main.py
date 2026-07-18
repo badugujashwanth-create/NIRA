@@ -36,6 +36,11 @@ def build_parser() -> argparse.ArgumentParser:
     action.add_argument("--prompt", help="Run one request non-interactively and exit.")
     action.add_argument("--health", action="store_true", help="Print local runtime health as JSON and exit.")
     action.add_argument(
+        "--status",
+        action="store_true",
+        help="Print the Operations Center product snapshot as JSON and exit.",
+    )
+    action.add_argument(
         "--inspect",
         nargs="?",
         const=".",
@@ -93,6 +98,9 @@ def main(argv: list[str] | None = None) -> int:
         runtime = build_runtime(args)
         if args.health:
             print(json.dumps(runtime.health(), indent=2, sort_keys=True))
+            return 0
+        if args.status:
+            print(json.dumps(runtime.product_snapshot(), indent=2, sort_keys=True))
             return 0
         if args.inspect is not None:
             result = runtime.inspect_project(args.inspect)

@@ -7,6 +7,8 @@ from queue import Empty, Queue
 from threading import Event
 from typing import TYPE_CHECKING, Any
 
+from nira.interface.operations_center import OperationsCenter
+
 try:
     import tkinter as tk
     from tkinter import filedialog, messagebox, scrolledtext, simpledialog
@@ -45,6 +47,7 @@ class ChatInterface:
         self._conversation_manager = None
         self._conversation_search_var = None
         self._conversation_refresh = None
+        self._operations_center = None
 
     def ensure_window(self, start_hidden: bool = False) -> bool:
         if not self.gui_available or tk is None or scrolledtext is None:
@@ -118,6 +121,20 @@ class ChatInterface:
             pady=7,
             font=("Segoe UI", 9, "bold"),
         ).pack(side="right", padx=(0, 12), pady=(4, 0))
+        tk.Button(
+            header,
+            text="Operations Center",
+            command=self._open_operations_center,
+            bg="#0f172a",
+            fg="#bae6fd",
+            activebackground="#1e293b",
+            activeforeground="#e0f2fe",
+            relief="flat",
+            bd=0,
+            padx=12,
+            pady=7,
+            font=("Segoe UI", 9, "bold"),
+        ).pack(side="right", padx=(0, 8), pady=(4, 0))
 
         body = tk.Frame(shell, bg="#08111b")
         body.grid(row=1, column=0, sticky="nsew")
@@ -282,6 +299,7 @@ class ChatInterface:
         root.bind("<Control-n>", lambda _event: self._start_new_conversation())
         root.bind("<Control-h>", lambda _event: self._open_conversation_manager())
         root.bind("<Control-l>", lambda _event: self._entry.focus_set() if self._entry is not None else None)
+        root.bind("<Control-Shift-O>", lambda _event: self._open_operations_center())
         self._render_current_conversation()
         self._set_text_widget(self._progress, "No active tasks.\n\nTry a project inspection or ask a question.")
         self._set_text_widget(
@@ -613,7 +631,7 @@ class ChatInterface:
         dialog = tk.Toplevel(self.root)
         self._conversation_manager = dialog
         dialog.title("Nira Conversations")
-        self._center_dialog(dialog, 680, 430)
+        self._center_dialog(dialog, 680, 470)
         dialog.minsize(560, 360)
         dialog.configure(bg="#08111b")
         dialog.transient(self.root)
@@ -660,8 +678,12 @@ class ChatInterface:
             font=("Segoe UI", 10),
         )
         search_entry.pack(side="left", fill="x", expand=True, ipady=7)
+        conversation_panel = tk.Frame(shell, bg="#08111b")
+        conversation_panel.pack(fill="both", expand=True)
+        conversation_panel.grid_rowconfigure(0, weight=1)
+        conversation_panel.grid_columnconfigure(0, weight=1)
         listbox = tk.Listbox(
-            shell,
+            conversation_panel,
             bg="#0f172a",
             fg="#e2e8f0",
             selectbackground="#0369a1",
@@ -671,7 +693,7 @@ class ChatInterface:
             font=("Segoe UI", 10),
             activestyle="dotbox",
         )
-        listbox.pack(fill="both", expand=True)
+        listbox.grid(row=0, column=0, sticky="nsew")
         conversations: list[Any] = []
 
         def close_dialog() -> None:
@@ -767,8 +789,8 @@ class ChatInterface:
                 self._render_current_conversation()
                 refresh()
 
-        actions = tk.Frame(shell, bg="#08111b")
-        actions.pack(fill="x", pady=(12, 0))
+        actions = tk.Frame(conversation_panel, bg="#08111b")
+        actions.grid(row=1, column=0, sticky="ew", pady=(12, 0))
         for label, command, foreground in (
             ("Open", switch, "#082f49"),
             ("Pin / unpin", pin, "#e2e8f0"),
@@ -853,6 +875,19 @@ class ChatInterface:
             "Workspace writes, processes, and network tools require explicit approval.",
             parent=self.root,
         )
+
+    def _open_operations_center(self) -> None:
+        if self.root is None or not hasattr(self.manager.runtime, "product_snapshot"):
+            return
+        if self._operations_center is None:
+            self._operations_center = OperationsCenter(self.root, self.manager.runtime)
+        self._operations_center.open()
+        if self.demo_mode and self._operations_center.window is not None:
+            self._publish_demo_window("operations", self._operations_center.window)
+
+    def close_operations_center(self) -> None:
+        if self._operations_center is not None:
+            self._operations_center.hide()
 
     def display_user_message(self, text: str) -> None:
         self.history.append({"role": "user", "text": text})

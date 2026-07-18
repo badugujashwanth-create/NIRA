@@ -22,7 +22,7 @@ Confirm the same `--state-dir` is used. `runtime.db` is local and not synchroniz
 
 ## Optional import fails
 
-PyQt and older encrypted-memory modules require `.[legacy-qt]` or `.[legacy-security]`. They are outside the v0.4 core contract.
+PyQt and older encrypted-memory modules require `.[legacy-qt]` or `.[legacy-security]`. They are outside the v0.5 core contract.
 
 ## Verification fails
 
@@ -30,4 +30,4 @@ Run `pip check`, then one failing test directly. Keep the exact command/output. 
 
 ## State is corrupt or disk is full
 
-Stop NIRA and preserve the state directory before manual recovery. v0.4 has no automated migration/corruption repair; do not claim recovery succeeded without validating exported conversations and database integrity.
+Stop NIRA and preserve the state directory before manual recovery. v0.5 has no automated migration/corruption repair; do not claim recovery succeeded without validating exported conversations and database integrity.

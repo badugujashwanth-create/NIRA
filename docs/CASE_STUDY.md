@@ -10,12 +10,14 @@ The v0.4 pass selected `AgentRuntime` as canonical and inserted access enforceme
 
 Offline startup became honest and immediate. Sessions gained recovery, search, pin, rename, export, and deletion. Project inspection and file reading became direct bounded tools. A screenshot-first desktop audit then drove DPI, composer, empty-state, conversation, privacy, and permission UI repairs.
 
+The v0.5 pass integrated a read-only Operations Center instead of adding presentation-only agent names. One canonical snapshot now exposes real sequential role activity, local memory counts, workflow templates and the completed plan, model routing/cache state, the registered tool authority, and live health evidence. The desktop filters private paths and identifiers while the local `--status` command retains the complete diagnostic contract.
+
 ## Evidence
 
-- Tests increased from 32 to 48.
+- Tests increased from 32 to 51.
 - Wheel builds and runs in a clean environment outside the repository.
 - Dependency audit is clean for the audited environment.
-- Five accepted screenshots show empty, offline response, approval, denial, and session management states.
+- Eight accepted screenshots show empty, offline response, approval, denial, session management, Operations Center overview, agent activity, and privacy-safe health states.
 
 ## Result and limitation
 

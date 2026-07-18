@@ -3,7 +3,9 @@ from __future__ import annotations
 import os
 import time
 from dataclasses import dataclass, field
+from datetime import datetime, timezone
 from pathlib import Path
+from threading import RLock
 from typing import Any, Callable
 
 from nira.agents import CodingAgent, DocumentAgent, EmotionAgent, PlannerAgent, ResearchAgent, SafetyAgent
@@ -54,6 +56,7 @@ class AgentState:
     tool_result: dict[str, Any] = field(default_factory=dict)
     confidence: float = 0.0
     risk_level: str = "low"
+    agent_trace: list[dict[str, str]] = field(default_factory=list)
 
 
 @dataclass
@@ -155,6 +158,11 @@ class AgentRuntime:
         )
         self.task_executor = TaskGraphExecutor(self.tool_registry, self.reflection_engine)
         self._status_listeners: list[RuntimeListener] = []
+        self._activity_lock = RLock()
+        self._agent_activity: dict[str, dict[str, str]] = {}
+        self._agent_trace: list[dict[str, str]] = []
+        self._last_plan: list[dict[str, Any]] = []
+        self._reset_agent_activity()
 
     def add_status_listener(self, listener: RuntimeListener) -> None:
         self._status_listeners.append(listener)
@@ -164,8 +172,11 @@ class AgentRuntime:
 
     def handle(self, user_input: str) -> RuntimeResponse:
         started = time.perf_counter()
+        self._reset_agent_activity()
+        self._record_agent_activity("Intent Router", "working", "Classifying the request")
         self._emit_status("input_received", f"Received request: {user_input}", payload={"text": user_input})
         intent = self.intent_analyzer.analyze(user_input)
+        self._record_agent_activity("Intent Router", "ready", f"Routed as {intent.kind}")
         self._emit_status("intent_analyzed", f"Detected intent: {intent.kind}", payload={"intent": intent.to_dict()})
         memory_hits = self._collect_memory_hits(user_input, intent)
         context = self._build_context(intent, memory_hits)
@@ -178,12 +189,18 @@ class AgentRuntime:
         self.short_term_memory.add_turn("user", user_input)
         self.conversation_store.add_message(self.current_conversation.conversation_id, "user", user_input)
         self._refresh_current_conversation()
-        agent_response = self._select_agent(intent).respond(user_input, context)
+        selected_agent = self._select_agent(intent)
+        selected_name = self._agent_display_name(selected_agent)
+        self._record_agent_activity(selected_name, "working", f"Preparing {intent.kind} guidance")
+        agent_response = selected_agent.respond(user_input, context)
+        self._record_agent_activity(selected_name, "ready", "Guidance prepared")
         guidance = ""
         if agent_response is not None and hasattr(agent_response, "text"):
             guidance = str(agent_response.text or "")
+        self._record_agent_activity("Planner", "working", "Building a dependency-aware task graph")
         self._emit_status("planning_started", f"Planning {intent.goal or user_input}...")
         graph = self.task_graph_planner.build_graph(user_input, intent, context, memory_hits, guidance)
+        self._record_agent_activity("Planner", "ready", f"Prepared {len(graph.nodes)} task(s)")
         state.plan = [node.to_dict() for node in graph.nodes]
         state.context["progress"] = list(state.plan)
         self._emit_status(
@@ -192,16 +209,31 @@ class AgentRuntime:
             tasks=state.plan,
             payload={"intent": intent.to_dict()},
         )
+        self._record_agent_activity("Safety", "working", "Reviewing tool and execution risk")
         state.risk_level = self.safety_agent.assess_risk(user_input, graph)
+        self._record_agent_activity("Safety", "ready", f"Risk classified as {state.risk_level}")
+        self._record_agent_activity("Tool Executor", "working", "Running the permission-bound task graph")
         execution = self.task_executor.execute(graph, state, progress_callback=self._forward_progress_update)
+        execution_status = "ready" if execution.success else "attention"
+        self._record_agent_activity(
+            "Tool Executor",
+            execution_status,
+            f"Completed {len(execution.results)} tool result(s)",
+        )
         state.plan = [node.to_dict() for node in graph.nodes]
+        self._last_plan = list(state.plan)
         state.current_task = execution.current_task
         state.context["model_stats"] = self.model_manager.stats()
         if execution.results:
             state.tool_result = execution.results[-1].to_dict()
         state.confidence = self.confidence_engine.score(state, execution)
+        self._record_agent_activity("Critic", "working", "Reflecting on execution evidence")
         reflection = self.reflection_engine.reflect(state, execution, guidance)
+        self._record_agent_activity("Critic", "ready", "Execution reviewed")
+        self._record_agent_activity("Response", "working", "Preparing the final response")
         final_text = self.emotion_agent.polish_response(reflection.summary, state.confidence)
+        self._record_agent_activity("Response", "ready", f"Confidence {state.confidence:.2f}")
+        state.agent_trace = self.agent_activity_trace()
         self._emit_status(
             "response_ready",
             "Prepared final response.",
@@ -251,6 +283,62 @@ class AgentRuntime:
             "current_conversation": self.current_conversation.to_dict(),
             "recent_permission_decisions": self.tool_registry.permission_policy.recent_decisions(limit=10),
         }
+
+    def product_snapshot(self) -> dict[str, Any]:
+        """Return one read-only view of the canonical product runtime.
+
+        The desktop Operations Center and CLI use this contract so agents,
+        memory, workflows, models, tools, and health cannot drift into separate
+        presentation-only claims.
+        """
+        conversations = self.list_conversations(limit=100)
+        workflow_templates = self.workflow_registry.load_all()
+        permission_policy = self.tool_registry.permission_policy
+        return {
+            "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+            "mode": "local-model" if self.config.local_model_enabled else "deterministic-offline",
+            "agents": self.agent_activity(),
+            "agent_trace": self.agent_activity_trace(),
+            "memory": {
+                "conversation_count": len(conversations),
+                "message_count": sum(item.message_count for item in conversations),
+                "short_term_turns": len(self.short_term_memory.snapshot()),
+                "research_items": len(self.research_memory.latest(limit=100)),
+                "storage": "Local SQLite",
+                "current_conversation": self.current_conversation.to_dict(),
+            },
+            "workflows": {
+                "templates": workflow_templates,
+                "template_count": len(workflow_templates),
+                "detection_threshold": self.config.workflow_detection_threshold,
+                "last_plan": list(self._last_plan),
+            },
+            "models": {
+                "routes": self.model_registry.to_mapping(),
+                "runtime": self.model_manager.stats(),
+                "cache_limit": self.config.max_cached_models,
+                "idle_ttl_seconds": self.config.model_idle_ttl_sec,
+            },
+            "tools": {
+                "registered": self.tool_registry.list_tools(),
+                "count": len(self.tool_registry.list_tools()),
+                "allowed_access": sorted(level.value for level in permission_policy.allowed),
+                "recent_decisions": permission_policy.recent_decisions(limit=20),
+            },
+            "system": {
+                "health": self.health(),
+                "resources": self.system_metrics.snapshot(),
+                "performance": self.performance_analyzer.summary(),
+            },
+        }
+
+    def agent_activity(self) -> list[dict[str, str]]:
+        with self._activity_lock:
+            return [dict(item) for item in self._agent_activity.values()]
+
+    def agent_activity_trace(self) -> list[dict[str, str]]:
+        with self._activity_lock:
+            return [dict(item) for item in self._agent_trace]
 
     def inspect_project(self, path: str = ".") -> ToolResult:
         return self._run_bounded_read_tool("analyze_project", {"path": path})
@@ -384,6 +472,54 @@ class AgentRuntime:
         if intent.kind == "coding":
             return self.coding_agent
         return self.planner_agent
+
+    @staticmethod
+    def _agent_display_name(agent: object) -> str:
+        names = {
+            "ResearchAgent": "Research",
+            "DocumentAgent": "Document",
+            "CodingAgent": "Coding",
+            "PlannerAgent": "Planner",
+        }
+        return names.get(type(agent).__name__, type(agent).__name__)
+
+    def _reset_agent_activity(self) -> None:
+        catalog = (
+            ("Intent Router", "Intent classification and specialist routing"),
+            ("Planner", "Goal decomposition and dependency-aware task graphs"),
+            ("Research", "Source analysis and knowledge capture"),
+            ("Coding", "Project analysis and bounded engineering changes"),
+            ("Document", "Local document creation and editing"),
+            ("Safety", "Risk classification and permission boundaries"),
+            ("Tool Executor", "Permission-bound task execution and repair"),
+            ("Critic", "Post-execution reflection and repair guidance"),
+            ("Response", "Confidence-aware response presentation"),
+        )
+        with self._activity_lock:
+            self._agent_activity = {
+                name: {
+                    "name": name,
+                    "capability": capability,
+                    "status": "idle",
+                    "detail": "Ready",
+                    "updated_at": "",
+                }
+                for name, capability in catalog
+            }
+            self._agent_trace = []
+
+    def _record_agent_activity(self, name: str, status: str, detail: str) -> None:
+        timestamp = datetime.now(timezone.utc).isoformat(timespec="seconds")
+        with self._activity_lock:
+            activity = self._agent_activity.setdefault(
+                name,
+                {"name": name, "capability": "Specialist runtime role"},
+            )
+            activity.update({"status": status, "detail": detail, "updated_at": timestamp})
+            if status != "working":
+                self._agent_trace.append(
+                    {"agent": name, "status": status, "detail": detail, "timestamp": timestamp}
+                )
 
     def _finalize_run(
         self,

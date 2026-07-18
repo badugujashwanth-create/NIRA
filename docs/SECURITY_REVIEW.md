@@ -1,6 +1,6 @@
 # Security review
 
-Reviewed: 18 July 2026. Scope: canonical v0.4 runtime, not optional legacy integrations.
+Reviewed: 19 July 2026. Scope: canonical v0.5 runtime and Operations Center, not optional legacy integrations.
 
 ## Controls verified
 
@@ -13,8 +13,9 @@ Reviewed: 18 July 2026. Scope: canonical v0.4 runtime, not optional legacy integ
 - URL validator rejects credentials and direct local/private hosts.
 - Interaction-training log is opt-in.
 - Permission evidence omits raw arguments.
+- Visible Operations Center health evidence omits workspace paths, state directories, and conversation identifiers.
 - Dependency audit reported no known vulnerabilities in the audited environment.
-- Gitleaks v8.30.1 reported no leaks in the tracked current tree and no leaks across all 17 commits.
+- Gitleaks v8.30.1 release scans cover the tracked current tree and full history before publication.
 
 ## Residual risks
 

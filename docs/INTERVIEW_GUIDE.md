@@ -22,4 +22,4 @@ Do not call it production-ready, fully autonomous, fully accessible, encrypted b
 
 ## Demo order
 
-Health and architecture → session recovery → bounded inspection/read → process approval and denial → decision evidence → tests/package smoke → limitations.
+Health and architecture → Operations Center evidence → session recovery → bounded inspection/read → process approval and denial → decision evidence → tests/package smoke → limitations.

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import threading
 from typing import Any
 
@@ -42,6 +43,9 @@ class InterfaceManager:
                 self.chat.root.after(3000, lambda: self.handle_user_input_async("Hello NIRA"))
                 self.chat.root.after(9000, lambda: self.handle_user_input_async("add authentication to this repo"))
                 self.chat.root.after(18000, self.chat._open_conversation_manager)
+                self.chat.root.after(24000, self.chat._open_operations_center)
+                self.chat.root.after(27000, lambda: self._demo_operations_tab("Agents"))
+                self.chat.root.after(30000, lambda: self._demo_operations_tab("System health"))
             self.chat.run_mainloop()
             return
         self.chat.run_console()
@@ -50,8 +54,12 @@ class InterfaceManager:
         root = self.chat.root
         if root is None:
             return
+        try:
+            time_scale = max(0.01, float(os.getenv("NIRA_DEMO_TIME_SCALE", "1")))
+        except ValueError:
+            time_scale = 1.0
         self.chat.demo_permission_decisions = [False, True]
-        self.chat.demo_permission_delay_ms = 10000
+        self.chat.demo_permission_delay_ms = max(100, int(10000 * time_scale))
         try:
             root.attributes("-topmost", True)
         except Exception:
@@ -70,21 +78,33 @@ class InterfaceManager:
         schedule = (
             (3000, self._demo_health),
             (18000, lambda: self.handle_user_input_async("Hello NIRA")),
-            (45000, self._demo_open_conversations),
-            (55000, lambda: self.chat.demo_filter_conversations("permission")),
-            (62000, lambda: self.chat.demo_filter_conversations("")),
-            (70000, self.chat.close_conversation_manager),
-            (75000, self._demo_project_inspection),
-            (100000, self._demo_bounded_read),
-            (120000, self._demo_path_guard),
-            (140000, lambda: self.handle_user_input_async("add authentication to this repo")),
-            (165000, self._demo_permission_history),
-            (180000, lambda: self.handle_user_input_async("verify this repository build")),
-            (215000, self._demo_engineering_evidence),
-            (228000, self._demo_close),
+            (38000, self._demo_open_operations_center),
+            (50000, lambda: self._demo_operations_tab("Overview")),
+            (60000, lambda: self._demo_operations_tab("Agents")),
+            (72000, lambda: self._demo_operations_tab("Memory")),
+            (84000, lambda: self._demo_operations_tab("Workflows")),
+            (96000, lambda: self._demo_operations_tab("Models")),
+            (108000, lambda: self._demo_operations_tab("Tools & permissions")),
+            (120000, lambda: self._demo_operations_tab("System health")),
+            (132000, self.chat.close_operations_center),
+            (138000, self._demo_open_conversations),
+            (148000, lambda: self.chat.demo_filter_conversations("permission")),
+            (156000, lambda: self.chat.demo_filter_conversations("")),
+            (164000, self.chat.close_conversation_manager),
+            (170000, self._demo_project_inspection),
+            (195000, self._demo_bounded_read),
+            (215000, self._demo_path_guard),
+            (235000, lambda: self.handle_user_input_async("add authentication to this repo")),
+            (260000, self._demo_permission_history),
+            (275000, lambda: self.handle_user_input_async("verify this repository build")),
+            (298000, self._demo_open_operations_center),
+            (300000, lambda: self._demo_operations_tab("Workflows")),
+            (310000, self.chat.close_operations_center),
+            (312000, self._demo_engineering_evidence),
+            (325000, self._demo_close),
         )
         for delay_ms, callback in schedule:
-            root.after(delay_ms, callback)
+            root.after(max(1, int(delay_ms * time_scale)), callback)
 
     def _demo_health(self) -> None:
         health = self.runtime.health()
@@ -96,16 +116,16 @@ class InterfaceManager:
             "tool_count": len(health["tools"]),
         }
         self.chat.display_system_message(
-            "Guided demo: this is the real v0.4 runtime health.\n" + json.dumps(summary, indent=2)
+            "Guided demo: this is the real v0.5 runtime health.\n" + json.dumps(summary, indent=2)
         )
-        self.chat.display_task_progress("Scene 1/9\n[done] Canonical runtime started\n[done] Offline-safe defaults verified")
+        self.chat.display_task_progress("Scene 1/12\n[done] Canonical runtime started\n[done] Offline-safe defaults verified")
         self.chat.display_status("Guided demo: runtime health")
 
     def _demo_open_conversations(self) -> None:
         active_id = self.runtime.current_conversation.conversation_id
         for title, user_text, assistant_text in (
             ("Permission design", "How are process tools controlled?", "Process tools require approve-once permission."),
-            ("Release checklist", "What remains before v0.4?", "Video, CI, pull request, and release gates."),
+            ("Release checklist", "What remains before v0.5?", "Video, CI, pull request, and release gates."),
         ):
             conversation = self.runtime.conversation_store.create(title)
             self.runtime.conversation_store.add_message(conversation.conversation_id, "user", user_text)
@@ -114,6 +134,19 @@ class InterfaceManager:
         self.chat._render_current_conversation()
         self.chat._open_conversation_manager()
         self.chat.display_status("Guided demo: local conversation controls")
+
+    def _demo_open_operations_center(self) -> None:
+        self.chat._open_operations_center()
+        self.chat.display_status("Guided demo: integrated Operations Center")
+
+    def _demo_operations_tab(self, title: str) -> None:
+        center = self.chat._operations_center
+        if center is None:
+            self.chat._open_operations_center()
+            center = self.chat._operations_center
+        if center is not None:
+            center.refresh()
+            center.select_tab(title)
 
     def _demo_project_inspection(self) -> None:
         result = self.runtime.inspect_project(".")
@@ -125,7 +158,7 @@ class InterfaceManager:
             f"Manifests: {result.data.get('manifests')}\n"
             "Dependency, cache, and build directories were excluded."
         )
-        self.chat.display_task_progress("Scene 4/9\n[done] Run bounded project inspection\n[done] Exclude generated/dependency trees")
+        self.chat.display_task_progress("Scene 5/12\n[done] Run bounded project inspection\n[done] Exclude generated/dependency trees")
         self.chat.display_status("Guided demo: project inspection completed")
 
     def _demo_bounded_read(self) -> None:
@@ -136,7 +169,7 @@ class InterfaceManager:
             f"Path: README.md\nBytes: {result.data.get('bytes')}\n"
             f"Bound: {result.data.get('max_bytes')} bytes\nPreview: {preview}…"
         )
-        self.chat.display_task_progress("Scene 5/9\n[done] Read README inside workspace\n[done] Bound returned content")
+        self.chat.display_task_progress("Scene 6/12\n[done] Read README inside workspace\n[done] Bound returned content")
         self.chat.display_status("Guided demo: bounded file read completed")
 
     def _demo_path_guard(self) -> None:
@@ -146,7 +179,7 @@ class InterfaceManager:
             f"Allowed: {result.ok}\nResult: {result.output}\n"
             "No outside file was read."
         )
-        self.chat.display_task_progress("Scene 6/9\n[done] Attempt path escape\n[done] Reject outside-workspace read")
+        self.chat.display_task_progress("Scene 7/12\n[done] Attempt path escape\n[done] Reject outside-workspace read")
         self.chat.display_status("Guided demo: path containment held")
 
     def _demo_permission_history(self) -> None:
@@ -164,23 +197,23 @@ class InterfaceManager:
         decisions = self.runtime.recent_permission_decisions()
         self.chat.display_system_message(
             "Engineering evidence from this release candidate:\n"
-            "• 49 automated tests passed\n"
+            "• 51 automated tests passed\n"
             "• dependency audit: no known vulnerabilities\n"
-            "• tracked tree and 17-commit history: no secrets found\n"
-            "• v0.4 wheel installed and reported healthy outside the source tree\n"
+            "• tracked tree and full Git history: no secrets found\n"
+            "• v0.5 wheel installed and reported healthy outside the source tree\n"
             f"• permission decisions in this process: {len(decisions)}"
         )
-        self.chat.display_task_progress("Scene 8/9\n[done] Deny one process request\n[done] Approve one verification once\n[done] Show release evidence")
+        self.chat.display_task_progress("Scene 11/12\n[done] Deny one process request\n[done] Approve one verification once\n[done] Show release evidence")
         self.chat.display_status("Guided demo: verification evidence")
 
     def _demo_close(self) -> None:
         self.chat.display_system_message(
-            "Honest v0.4 boundary:\n"
+            "Honest v0.5 boundary:\n"
             "The llama.cpp adapter is configurable and mock-tested, but no real model/hardware profile is claimed. "
             "Voice, OCR, legacy PyQt, retrieval quality, and screen-reader behavior remain outside the verified core.\n\n"
-            "NIRA v0.4 — useful offline, explicit before side effects, and honest about what is not finished."
+            "NIRA v0.5 — integrated local operations, explicit before side effects, and honest about what is not finished."
         )
-        self.chat.display_task_progress("Scene 9/9\n[done] Main workflow\n[done] Safety boundary\n[done] Evidence and limitations")
+        self.chat.display_task_progress("Scene 12/12\n[done] Operations Center\n[done] Main workflow\n[done] Safety boundary\n[done] Evidence and limitations")
         self.chat.display_status("Guided demo complete")
 
     def handle_user_input(self, text: str, source: str = "chat"):

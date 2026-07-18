@@ -1,6 +1,6 @@
 # Architecture
 
-NIRA v0.4 uses `nira.core.AgentRuntime` as the canonical lifecycle for desktop, console, CLI, and Python callers.
+NIRA v0.5 uses `nira.core.AgentRuntime` as the canonical lifecycle for desktop, Operations Center, console, CLI, and Python callers.
 
 ```mermaid
 flowchart LR
@@ -30,6 +30,8 @@ flowchart LR
 - `resolve_within_root`: path containment for workspace and state boundaries.
 - `ConversationStore`: named local sessions and export/delete lifecycle.
 - `ModelManager`: optional model routing, cache limits, and latency evidence.
+- `product_snapshot`: one read-only contract for live agent activity, memory counts, workflow plans, model routing, tool authority, and system evidence.
+- `OperationsCenter`: scrollable desktop presentation of the snapshot; visible health fields omit private local paths and identifiers.
 
 ## Trust boundaries
 
@@ -37,4 +39,4 @@ Workspace paths, commands, URLs, model endpoints, exported files, and optional O
 
 ## Canonical versus legacy
 
-Historical automation, encrypted memory, PyQt overlay, and routing modules remain available through the `nira_agent` compatibility namespace. They are not on the v0.4 canonical request path. Some require `legacy-security` or `legacy-qt` extras and are not covered by the 48-test core contract.
+Historical automation, encrypted memory, PyQt overlay, and routing modules remain available through the `nira_agent` compatibility namespace. They are not on the v0.5 canonical request path. Some require `legacy-security` or `legacy-qt` extras and are not covered by the 51-test core contract.

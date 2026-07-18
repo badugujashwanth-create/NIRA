@@ -159,6 +159,21 @@ try {
     }
     $conversationHandle = [IntPtr]([int64](Get-Content -Raw -LiteralPath $conversationHandleFile))
     Save-WindowScreenshot $conversationHandle (Join-Path $output "05-conversation-manager.png")
+
+    $operationsHandleFile = Join-Path $StateDir "ui-audit-operations-window.txt"
+    $operationsDeadline = (Get-Date).AddSeconds(10)
+    do {
+        Start-Sleep -Milliseconds 250
+    } while (-not (Test-Path -LiteralPath $operationsHandleFile) -and (Get-Date) -lt $operationsDeadline)
+    if (-not (Test-Path -LiteralPath $operationsHandleFile)) {
+        throw "NIRA did not open the expected Operations Center."
+    }
+    $operationsHandle = [IntPtr]([int64](Get-Content -Raw -LiteralPath $operationsHandleFile))
+    Save-WindowScreenshot $operationsHandle (Join-Path $output "06-operations-center-overview.png")
+    Start-Sleep -Seconds 3
+    Save-WindowScreenshot $operationsHandle (Join-Path $output "07-operations-center-agents.png")
+    Start-Sleep -Seconds 3
+    Save-WindowScreenshot $operationsHandle (Join-Path $output "08-operations-center-system.png")
 }
 finally {
     if ($null -ne $windowProcess -and -not $windowProcess.HasExited) {
