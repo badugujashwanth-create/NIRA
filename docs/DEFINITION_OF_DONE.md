@@ -16,8 +16,8 @@
 - [x] Current-tree and full-history secret scans recorded.
 - [x] v0.5 wheel build and isolated health/status smoke.
 - [x] Updated 5:40 authentic video and all 12 verification frames inspected.
-- [ ] Pull request CI green and reviewed.
-- [ ] Merge, tag, and GitHub release complete.
+- [x] Pull request CI green and reviewed.
+- [x] Merge, tag, and GitHub release complete.
 
 ## Flagship status
 
