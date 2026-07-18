@@ -34,7 +34,7 @@ from nira.research.summarizer import Summarizer
 from nira.research.topic_planner import TopicPlanner
 from nira.task_graph.executor import ExecutionSummary, TaskGraphExecutor
 from nira.task_graph.planner import TaskGraphPlanner
-from nira.tools import ToolRegistry, build_default_registry
+from nira.tools import ToolRegistry, ToolResult, build_default_registry
 from nira.security.tool_policy import ApprovalCallback, ToolPermissionPolicy
 from nira.tools.base import ToolAccess
 from nira.training.interaction_logger import InteractionLogger
@@ -249,7 +249,20 @@ class AgentRuntime:
             "allowed_access": sorted(level.value for level in self.tool_registry.permission_policy.allowed),
             "interaction_logging_enabled": self.config.interaction_logging_enabled,
             "current_conversation": self.current_conversation.to_dict(),
+            "recent_permission_decisions": self.tool_registry.permission_policy.recent_decisions(limit=10),
         }
+
+    def inspect_project(self, path: str = ".") -> ToolResult:
+        return self._run_bounded_read_tool("analyze_project", {"path": path})
+
+    def read_workspace_file(self, path: str, max_bytes: int = 65_536) -> ToolResult:
+        return self._run_bounded_read_tool(
+            "file_manager",
+            {"action": "read", "path": path, "max_bytes": max_bytes},
+        )
+
+    def recent_permission_decisions(self, limit: int = 20) -> list[dict[str, object]]:
+        return self.tool_registry.permission_policy.recent_decisions(limit=limit)
 
     def new_conversation(self, title: str = "New conversation") -> Conversation:
         self.current_conversation = self.conversation_store.create(title)
@@ -302,6 +315,10 @@ class AgentRuntime:
         messages = self.conversation_store.messages(conversation_id, limit=self.config.max_short_term_turns)
         for message in messages:
             self.short_term_memory.add_turn(message.role, message.content)
+
+    def _run_bounded_read_tool(self, tool_name: str, args: dict[str, Any]) -> ToolResult:
+        state = AgentState(context={"cwd": str(Path.cwd())})
+        return self.tool_registry.execute(tool_name, args, state)
 
     def _collect_memory_hits(self, user_input: str, intent: IntentResult) -> dict[str, Any]:
         return {

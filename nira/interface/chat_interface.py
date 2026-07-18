@@ -245,7 +245,7 @@ class ChatInterface:
             print(
                 "Commands: /health, /new [title], /sessions, /use <id>, /search <text>, "
                 "/pin [id], /unpin [id], /rename <title>, /export <path>, /delete <id>, "
-                "/privacy, /voice, /exit"
+                "/inspect [path], /read <path>, /permissions, /privacy, /voice, /exit"
             )
             return True
         if name == "/health":
@@ -321,6 +321,23 @@ class ChatInterface:
                 f"Interaction training log enabled: {runtime.config.interaction_logging_enabled}\n"
                 "Conversation history is local SQLite data. Workspace writes, processes, and network tools require approval."
             )
+            return True
+        if name == "/inspect":
+            print(runtime.inspect_project(value or ".").output)
+            return True
+        if name == "/read":
+            if not value:
+                print("Usage: /read <workspace-relative-path>")
+                return True
+            print(runtime.read_workspace_file(value).output)
+            return True
+        if name == "/permissions":
+            decisions = runtime.recent_permission_decisions()
+            if not decisions:
+                print("No tool permission decisions in this process.")
+            for decision in decisions:
+                verdict = "allowed" if decision["allowed"] else "blocked"
+                print(f"{decision['timestamp']}  {decision['tool']}  {decision['access']}  {verdict}  {decision['reason']}")
             return True
         if name == "/voice":
             self.manager.handle_voice_input()

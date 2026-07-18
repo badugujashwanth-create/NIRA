@@ -30,7 +30,18 @@ class FileManager(Tool):
                 if path.is_dir():
                     entries = sorted(item.name for item in path.iterdir())
                     return ToolResult(True, "\n".join(entries[:200]), {"count": len(entries), "path": str(path)})
-                return ToolResult(True, path.read_text(encoding="utf-8", errors="ignore"), {"path": str(path)})
+                requested_limit = int(args.get("max_bytes", 65_536))
+                max_bytes = max(1, min(requested_limit, 262_144))
+                raw = path.read_bytes()
+                truncated = len(raw) > max_bytes
+                body = raw[:max_bytes].decode("utf-8", errors="replace")
+                if truncated:
+                    body += f"\n\n[Output truncated at {max_bytes} bytes.]"
+                return ToolResult(
+                    True,
+                    body,
+                    {"path": str(path), "bytes": len(raw), "truncated": truncated, "max_bytes": max_bytes},
+                )
             except OSError as exc:
                 return ToolResult(False, f"Read failed for {path}: {exc}")
         if action == "write":

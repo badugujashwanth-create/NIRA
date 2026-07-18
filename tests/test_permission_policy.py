@@ -75,3 +75,26 @@ def test_chat_does_not_create_notes_or_require_tool_permission() -> None:
         assert not (config.documents_dir / "chat_notes.md").exists()
         assert not (config.training_dir / "interactions.jsonl").exists()
         runtime.shutdown()
+
+
+def test_permission_decisions_are_bounded_and_exclude_tool_arguments() -> None:
+    policy = ToolPermissionPolicy()
+    for index in range(120):
+        policy.authorize("write_test", {"secret": f"token-{index}"}, ToolAccess.WORKSPACE_WRITE)
+
+    decisions = policy.recent_decisions(limit=100)
+    assert len(decisions) == 100
+    assert decisions[-1]["allowed"] is False
+    assert decisions[-1]["reason"] == "workspace_write_approval_required"
+    assert "token" not in str(decisions)
+
+
+def test_failed_approval_callback_defaults_to_denied() -> None:
+    def fail_callback(_name, _args, _access):
+        raise RuntimeError("UI unavailable")
+
+    policy = ToolPermissionPolicy(approval_callback=fail_callback)
+    allowed, reason = policy.authorize("write_test", {}, ToolAccess.WORKSPACE_WRITE)
+
+    assert allowed is False
+    assert reason == "approval_callback_failed"

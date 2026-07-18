@@ -22,8 +22,17 @@ def build_parser() -> argparse.ArgumentParser:
         description="NIRA local-first assistant with explicit tool permissions.",
     )
     parser.add_argument("--console", action="store_true", help="Use the console instead of the desktop window.")
-    parser.add_argument("--prompt", help="Run one request non-interactively and exit.")
-    parser.add_argument("--health", action="store_true", help="Print local runtime health as JSON and exit.")
+    action = parser.add_mutually_exclusive_group()
+    action.add_argument("--prompt", help="Run one request non-interactively and exit.")
+    action.add_argument("--health", action="store_true", help="Print local runtime health as JSON and exit.")
+    action.add_argument(
+        "--inspect",
+        nargs="?",
+        const=".",
+        metavar="PATH",
+        help="Inspect a project path inside the workspace with the read-only analyzer.",
+    )
+    action.add_argument("--read-file", metavar="PATH", help="Read up to 64 KiB from a file inside the workspace.")
     parser.add_argument("--workspace", type=Path, help="Bound project tools to this existing directory.")
     parser.add_argument("--state-dir", type=Path, help="Store NIRA's local state in this directory.")
     parser.add_argument(
@@ -60,17 +69,27 @@ def build_runtime(args: argparse.Namespace | None = None) -> AgentRuntime:
 
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
-    if args.workspace:
-        workspace = args.workspace.expanduser().resolve()
-        if not workspace.is_dir():
-            raise SystemExit(f"Workspace does not exist or is not a directory: {workspace}")
-        os.chdir(workspace)
-
-    runtime = build_runtime(args)
+    original_cwd = Path.cwd()
+    runtime: AgentRuntime | None = None
     try:
+        if args.workspace:
+            workspace = args.workspace.expanduser().resolve()
+            if not workspace.is_dir():
+                raise SystemExit(f"Workspace does not exist or is not a directory: {workspace}")
+            os.chdir(workspace)
+
+        runtime = build_runtime(args)
         if args.health:
             print(json.dumps(runtime.health(), indent=2, sort_keys=True))
             return 0
+        if args.inspect is not None:
+            result = runtime.inspect_project(args.inspect)
+            print(json.dumps(result.to_dict(), indent=2, sort_keys=True))
+            return 0 if result.ok else 2
+        if args.read_file is not None:
+            result = runtime.read_workspace_file(args.read_file)
+            print(json.dumps(result.to_dict(), indent=2, sort_keys=True))
+            return 0 if result.ok else 2
         if args.prompt is not None:
             response = runtime.handle(args.prompt)
             print(response.text)
@@ -82,7 +101,9 @@ def main(argv: list[str] | None = None) -> int:
         manager.run()
         return 0
     finally:
-        runtime.shutdown()
+        if runtime is not None:
+            runtime.shutdown()
+        os.chdir(original_cwd)
 
 
 def _console_approval(tool_name: str, args: dict[str, Any], access: ToolAccess) -> bool:
