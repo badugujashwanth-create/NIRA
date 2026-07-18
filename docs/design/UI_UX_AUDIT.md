@@ -1,13 +1,14 @@
 # NIRA desktop product-flow audit
 
-Audit date: 18 July 2026  
-Build audited: `product-completion-2026` working tree after the permission-bound desktop pass  
+Audit date: 19 July 2026
+
+Build audited: `product-integration-v0.5` working tree after the Operations Center pass
 Mode: combined UX and screenshot-based accessibility audit  
 User goal: start a conversation, understand offline behavior, and safely attempt a coding workflow.
 
 ## Overall verdict
 
-The corrected desktop flow is coherent and usable at its 1120 x 760 default: the composer stays visible, offline status is honest, task progress is readable, permissions are explicit, and local conversations are manageable. It is credible as a technical desktop prototype. It is not yet a finished general-purpose assistant UI because rich message rendering, attachments, responsive reflow below the declared minimum, and assistive-technology verification remain open.
+The corrected desktop flow is coherent and usable at its 1120 x 760 default: the composer stays visible, offline status is honest, task progress is readable, permissions are explicit, local conversations are manageable, and the canonical runtime has a privacy-safe Operations Center. It is credible as a technical desktop prototype. It is not yet a finished general-purpose assistant UI because rich message rendering, attachments, responsive reflow below the declared minimum, and assistive-technology verification remain open.
 
 ## Flow evidence
 
@@ -78,7 +79,23 @@ Health: **Healthy**
 
 - Users can search, open, pin, rename, export, and confirmation-delete locally stored sessions.
 - The dialog explains storage scope and uses text labels for every destructive or persistent action.
-- Search is present in the current code but was added after this accepted frame; it will be recaptured with the final demo assets.
+- Search and all Open/Pin/Rename/Export/Delete actions are visible in the accepted recapture.
+
+### Step 6 - Inspect integrated runtime state
+
+Health: **Healthy with explicit evidence limits**
+
+![NIRA Operations Center overview](verification/06-operations-center-overview.png)
+
+![NIRA agent activity board](verification/07-operations-center-agents.png)
+
+![NIRA privacy-safe system health](verification/08-operations-center-system.png)
+
+- All seven tabs fit at the audited 960 x 680 Operations Center size.
+- Long agent, workflow, tool, and health content is scrollable rather than clipped.
+- Agent activity reflects the real sequential runtime and does not claim parallel execution.
+- System Health deliberately omits workspace paths, state directories, and conversation identifiers.
+- The window is read-only; Refresh observes the runtime and cannot grant a permission.
 
 ## Changes completed from the audit
 
@@ -87,11 +104,12 @@ Health: **Healthy**
 3. Added a default-deny approve-once desktop dialog and prevented permission denials from auto-retrying.
 4. Removed duplicate transcript notifications and replaced raw failure copy with recovery guidance.
 5. Added an actionable empty state plus visible offline, privacy, storage, and side-effect status.
+6. Added a scrollable Operations Center grounded in the canonical product snapshot and filtered its visible health contract for screenshot privacy.
 
 ## Remaining opportunities
 
 1. Add markdown, code highlighting, copy actions, and attachment handling.
-2. Expose permission-decision history and local-model diagnostics in the desktop UI.
+2. Add filtering and export for permission evidence and deeper measured local-model diagnostics.
 3. Verify the full keyboard path and Windows accessibility tree with Narrator or NVDA.
 4. Measure contrast and test Windows scaling, high-contrast mode, and the declared minimum window size.
 
@@ -104,4 +122,4 @@ Health: **Healthy**
 
 ## Evidence limits
 
-These findings use five current-build screenshots, an app-written transcript check, persisted SQLite evidence, and source inspection. The earlier DPI-mismatched captures are retained under `audit/` with a rejection notice and are not evidence. Screenshots cannot establish keyboard completeness, screen-reader output, contrast ratios, target sizes, reduced-motion behavior, or WCAG conformance. The audit therefore does not claim accessibility compliance.
+These findings use eight current-build screenshots, an app-written transcript check, persisted SQLite evidence, and source inspection. The earlier DPI-mismatched captures are retained under `audit/` with a rejection notice and are not evidence. Screenshots cannot establish keyboard completeness, screen-reader output, contrast ratios, target sizes, reduced-motion behavior, or WCAG conformance. The audit therefore does not claim accessibility compliance.

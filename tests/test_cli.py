@@ -58,3 +58,15 @@ def test_full_demo_flag_is_explicit() -> None:
     args = build_parser().parse_args(["--full-demo"])
     assert args.full_demo is True
     assert args.ui_audit_demo is False
+
+
+def test_status_command_reports_integrated_product_snapshot(tmp_path, capsys) -> None:
+    exit_code = main(["--status", "--state-dir", str(tmp_path)])
+
+    payload = json.loads(capsys.readouterr().out)
+    assert exit_code == 0
+    assert payload["mode"] == "deterministic-offline"
+    assert payload["memory"]["storage"] == "Local SQLite"
+    assert payload["workflows"]["template_count"] >= 1
+    assert payload["tools"]["count"] >= 1
+    assert any(agent["name"] == "Safety" for agent in payload["agents"])

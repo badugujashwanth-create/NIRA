@@ -2,15 +2,15 @@
 
 > A local-first Python desktop assistant that plans and remembers useful work while keeping filesystem, process, and network side effects under explicit user control.
 
-**Status:** v0.4.0 release candidate on `product-completion-2026`. Deterministic offline mode, persistent sessions, bounded tools, desktop permissions, 49 tests, and wheel installation are verified. A real local model is configurable but has not been verified on this machine.
+**Status:** v0.5.0 release candidate on `product-integration-v0.5`. Deterministic offline mode, persistent sessions, bounded tools, desktop permissions, the integrated Operations Center, and 51 tests are verified. A real local model is configurable but has not been verified on this machine.
 
 [Architecture](docs/ARCHITECTURE.md) · [Security review](docs/SECURITY_REVIEW.md) · [Test report](docs/TEST_REPORT.md) · [Case study](docs/CASE_STUDY.md) · [Interview guide](docs/INTERVIEW_GUIDE.md)
 
 ## Demo
 
-[![NIRA v0.4 guided desktop walkthrough](docs/demo/demo-thumbnail.png)](docs/demo/demo.webm)
+[![NIRA v0.5 guided desktop walkthrough](docs/demo/demo-thumbnail.png)](docs/demo/demo.webm)
 
-[Watch the full 4:05 walkthrough](docs/demo/demo.webm) or read the [captions](docs/demo/demo-captions.vtt). The recording exercises runtime health, offline chat, persistent conversations, bounded read tools, path containment, default-deny permissions, one-time approval, evidence, and known limits. Seven milestone frames and machine-readable metadata are retained in [demo verification](docs/demo/verification/).
+[Watch the full 5:40 walkthrough](docs/demo/demo.webm) or read the [captions](docs/demo/demo-captions.vtt). The recording exercises runtime health, offline chat, the Operations Center, persistent conversations, bounded read tools, path containment, default-deny permissions, one-time approval, evidence, and known limits. Twelve milestone frames and machine-readable metadata are retained in [demo verification](docs/demo/verification/).
 
 ## Problem and users
 
@@ -24,6 +24,7 @@ Assistant runtimes often mix intent, model output, and privileged actions. NIRA 
 - Coding, research, document, and workflow task plans.
 - Explicit approval for workspace writes, processes, and network tools.
 - Visible desktop/console progress and safe failures.
+- Read-only Operations Center for agents, memory, workflows, models, tools, permissions, and system health.
 - Optional llama.cpp-compatible local endpoint routing.
 
 ## Safety model
@@ -69,7 +70,7 @@ nira/memory/        conversations and retrieval stores
 nira/interface/     Tk desktop, console, progress, notifications
 nira/models/        model registry, routing, llama.cpp adapter
 local_llm/          optional managed llama.cpp integration
-tests/              49 automated tests
+tests/              51 automated tests
 docs/               product, security, test, design, and demo evidence
 ```
 
@@ -98,6 +99,7 @@ No credentials are required for offline mode. [.env.example](.env.example) docum
 
 # Health and two bounded tools
 .\.venv\Scripts\python -m nira --health --state-dir .\.local-state
+.\.venv\Scripts\python -m nira --status --state-dir .\.local-state
 .\.venv\Scripts\python -m nira --inspect . --workspace .
 .\.venv\Scripts\python -m nira --read-file README.md --workspace .
 
@@ -116,7 +118,7 @@ See [the API/CLI reference](docs/API.md) and [development guide](docs/DEVELOPMEN
 .\.venv\Scripts\python -m build
 ```
 
-Current evidence: **49 tests passed**, dependencies are consistent, no known dependency vulnerabilities or tracked/history secrets were found in the audited environment, and the v0.4 wheel returned healthy JSON from a clean virtual environment outside the repository.
+Current evidence: **51 tests passed**, dependencies are consistent, and the v0.5 package, dependency, secret, and isolated-install gates are completed before release.
 
 ## Privacy and security
 
@@ -131,7 +133,7 @@ Read [SECURITY.md](SECURITY.md) and [the security review](docs/SECURITY_REVIEW.m
 
 ## Limitations
 
-- No real local model/hardware profile has been verified for v0.4.
+- No real local model/hardware profile has been verified for v0.5.
 - Transcript rendering is plain text; attachments and rich Markdown are incomplete.
 - Voice, OCR, PyQt overlay, and older encrypted-memory modules are outside the core test contract.
 - Accessibility has screenshot/source evidence but no Narrator/NVDA or full scaling matrix.
@@ -142,7 +144,7 @@ Read [SECURITY.md](SECURITY.md) and [the security review](docs/SECURITY_REVIEW.m
 
 Next: model status and one verified model profile, permission timeline, memory lifecycle controls, retrieval evaluation/citations, rich messages, recovery tests, and manual accessibility evidence. See [VERSION_ROADMAP.md](docs/VERSION_ROADMAP.md) and [CONTRIBUTING.md](CONTRIBUTING.md).
 
-`nira_agent` is a compatibility namespace for historical imports. Optional legacy modules are not evidence for v0.4 completion.
+`nira_agent` is a compatibility namespace for historical imports. Optional legacy modules are not evidence for v0.5 completion.
 
 ## License status
 

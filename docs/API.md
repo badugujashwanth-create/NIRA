@@ -1,6 +1,6 @@
 # CLI and Python API
 
-NIRA v0.4 is local software. It exposes no HTTP server.
+NIRA v0.5 is local software. It exposes no HTTP server.
 
 ## Commands
 
@@ -9,6 +9,7 @@ NIRA v0.4 is local software. It exposes no HTTP server.
 | `nira` | Tk desktop | read/state only |
 | `nira --console` | interactive console | read/state plus approve once |
 | `nira --health` | JSON runtime status | state initialization |
+| `nira --status` | Integrated JSON product snapshot | read-only state observation |
 | `nira --prompt TEXT` | one planned request | policy-bound |
 | `nira --inspect [PATH]` | JSON project inventory | read-only |
 | `nira --read-file PATH` | JSON bounded file content | read-only |
@@ -32,4 +33,4 @@ finally:
     runtime.shutdown()
 ```
 
-`RuntimeResponse` includes the final text, state, planned nodes, tool results, and anomalies. Use explicit conversation and bounded-read methods rather than reaching into SQLite directly.
+`RuntimeResponse` includes the final text, state, planned nodes, tool results, anomalies, and the completed agent collaboration trace. `runtime.product_snapshot()` returns the same read-only agents/memory/workflows/models/tools/system contract used by `--status` and the Operations Center. Use explicit conversation and bounded-read methods rather than reaching into SQLite directly.

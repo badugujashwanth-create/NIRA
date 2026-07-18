@@ -1,6 +1,6 @@
 # Definition of done
 
-## v0.4 release
+## v0.5 release
 
 - [x] Canonical runtime and entry points.
 - [x] Honest offline mode.
@@ -8,11 +8,14 @@
 - [x] Two real bounded read tools.
 - [x] Default-deny side effects and approve once.
 - [x] Denial cannot auto-retry.
-- [x] 49 tests, compile, dependency integrity, wheel build, isolated smoke.
+- [x] Operations Center and `--status` use the canonical runtime snapshot.
+- [x] Visible health evidence excludes private local paths.
+- [x] 51 tests, compile, and dependency integrity.
 - [x] Current desktop flow and accessibility limits documented.
 - [x] Full repository documentation reviewed.
 - [x] Current-tree and full-history secret scans recorded.
-- [x] Minimum-three-minute authentic video inspected.
+- [x] v0.5 wheel build and isolated health/status smoke.
+- [x] Updated 5:40 authentic video and all 12 verification frames inspected.
 - [ ] Pull request CI green and reviewed.
 - [ ] Merge, tag, and GitHub release complete.
 

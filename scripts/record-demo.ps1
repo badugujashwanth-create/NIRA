@@ -1,7 +1,7 @@
 [CmdletBinding()]
 param(
     [ValidateRange(180, 360)]
-    [int]$DurationSeconds = 245,
+    [int]$DurationSeconds = 340,
     [string]$FfmpegPath = ""
 )
 
@@ -282,8 +282,21 @@ if ($LASTEXITCODE -ne 0) {
     throw "FFmpeg final encoding failed."
 }
 
-& $ffmpeg -hide_banner -loglevel error -y -ss 00:02:22 -i $outputVideo -frames:v 1 (Join-Path $demoDir "demo-thumbnail.png")
-$frameTimes = @("00:00:08", "00:00:32", "00:00:58", "00:01:28", "00:02:24", "00:03:14", "00:03:55")
+& $ffmpeg -hide_banner -loglevel error -y -ss 00:00:42 -i $outputVideo -frames:v 1 (Join-Path $demoDir "demo-thumbnail.png")
+$frameTimes = @(
+    "00:00:08",
+    "00:00:28",
+    "00:00:45",
+    "00:01:05",
+    "00:01:28",
+    "00:02:03",
+    "00:02:30",
+    "00:03:00",
+    "00:03:40",
+    "00:04:05",
+    "00:05:02",
+    "00:05:30"
+)
 for ($index = 0; $index -lt $frameTimes.Count; $index++) {
     $frameName = "{0:D2}-frame.png" -f ($index + 1)
     & $ffmpeg -hide_banner -loglevel error -y -ss $frameTimes[$index] -i $outputVideo -frames:v 1 (Join-Path $verificationDir $frameName)
@@ -294,7 +307,7 @@ $probe = $probeJson | ConvertFrom-Json
 $duration = [double]$probe.format.duration
 $videoStream = $probe.streams | Where-Object { $_.codec_type -eq "video" } | Select-Object -First 1
 $audioStream = $probe.streams | Where-Object { $_.codec_type -eq "audio" } | Select-Object -First 1
-if ($duration -lt 180 -or $videoStream.width -ne 1280 -or $videoStream.height -ne 720) {
+if ($duration -lt 180 -or $videoStream.width -ne 1280 -or $videoStream.height -ne 720 -or $null -eq $audioStream) {
     throw "Demo acceptance failed: duration=$duration resolution=$($videoStream.width)x$($videoStream.height)."
 }
 
@@ -309,6 +322,7 @@ $evidence = [ordered]@{
     sha256 = (Get-FileHash -Algorithm SHA256 $outputVideo).Hash.ToLower()
     bytes = (Get-Item $outputVideo).Length
     verification_frames = $frameTimes.Count
+    frame_timestamps = $frameTimes
 }
 [System.IO.File]::WriteAllText(
     (Join-Path $verificationDir "verification.json"),

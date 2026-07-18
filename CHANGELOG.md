@@ -1,6 +1,21 @@
 # Changelog
 
-## [0.4.0] - Unreleased
+## [0.5.0] - 2026-07-19
+
+### Added
+
+- Canonical read-only product snapshot for agents, memory, workflows, models, tools, permissions, and system health.
+- Desktop Operations Center with live collaboration trace, completed-plan evidence, and scrollable product-domain tabs.
+- `--status` JSON command for the same integrated runtime contract.
+- Repository-grounded maturity gap matrix separating canonical features from deferred expansion.
+
+### Changed
+
+- Product walkthrough now includes Operations Center evidence and the complete permission-bound workflow.
+- Conversation-manager layout preserves all actions at the audited desktop size.
+- Visible health evidence filters private workspace and state-directory paths.
+
+## [0.4.0] - 2026-07-18
 
 ### Added
 
@@ -27,4 +42,5 @@
 
 - Portfolio baseline with 32 tests, initial docs, and terminal demo.
 
-[0.4.0]: https://github.com/badugujashwanth-create/NIRA/compare/v0.3.0...HEAD
+[0.5.0]: https://github.com/badugujashwanth-create/NIRA/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/badugujashwanth-create/NIRA/compare/v0.3.0...v0.4.0

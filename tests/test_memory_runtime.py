@@ -81,6 +81,13 @@ class MemoryRuntimeTests(unittest.TestCase):
             response = runtime.handle("Research Android authentication methods")
             self.assertIn("research", response.text.lower())
             self.assertEqual(len(response.plan), 5)
+            self.assertTrue(response.state.agent_trace)
+            trace_agents = {item["agent"] for item in response.state.agent_trace}
+            self.assertTrue({"Intent Router", "Research", "Planner", "Safety", "Critic", "Response"} <= trace_agents)
+            snapshot = runtime.product_snapshot()
+            self.assertEqual(snapshot["agent_trace"], response.state.agent_trace)
+            self.assertEqual(snapshot["workflows"]["template_count"], 1)
+            self.assertEqual(snapshot["workflows"]["last_plan"], response.plan)
             stored = runtime.research_memory.search("Android authentication")
             self.assertTrue(stored)
             runtime.shutdown()

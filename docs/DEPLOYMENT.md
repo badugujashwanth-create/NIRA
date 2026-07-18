@@ -5,8 +5,8 @@ NIRA is a local application, not a hosted service.
 ## Supported release path
 
 1. Create a Python 3.11+ virtual environment.
-2. Install the v0.4 wheel and its three runtime dependencies.
-3. Run `python -m nira --health --state-dir <local-path>`.
+2. Install the v0.5 wheel and its three runtime dependencies.
+3. Run `python -m nira --health --state-dir <local-path>` and `python -m nira --status --state-dir <local-path>`.
 4. Launch the desktop or console.
 5. Enable a local model only after its endpoint is configured and verified.
 
