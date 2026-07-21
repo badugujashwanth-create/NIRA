@@ -1,6 +1,8 @@
 # Test report
 
-Last local verification: 19 July 2026, Windows, Python 3.13, branch `product-integration-v0.5`.
+Release verification: 19 July 2026, Windows, Python 3.13, branch `product-integration-v0.5`.
+
+Fresh documentation-reconciliation check: 21 July 2026, branch `phase5-nira-reconciliation`; `pip check`, all 51 tests, and `compileall` passed. Unaffected package, audit, secret, isolated-install, and media evidence below was preserved rather than regenerated.
 
 | Check | Result | Scope |
 | --- | --- | --- |
