@@ -8,9 +8,11 @@
 
 ## Demo
 
-[![NIRA v0.5 guided desktop walkthrough](docs/demo/demo-thumbnail.png)](docs/demo/demo.webm)
+[![NIRA v0.5 guided desktop walkthrough](docs/demo/demo-thumbnail.png)](https://jashwanth-portfolio-ten.vercel.app/work/nira/)
 
-[Watch the full 5:40 walkthrough](docs/demo/demo.webm) or read the [captions](docs/demo/demo-captions.vtt). The recording exercises runtime health, offline chat, the Operations Center, persistent conversations, bounded read tools, path containment, default-deny permissions, one-time approval, evidence, and known limits. Twelve milestone frames and machine-readable metadata are retained in [demo verification](docs/demo/verification/).
+[Open MP4](https://jashwanth-portfolio-ten.vercel.app/media/nira/demo.mp4) · [Download WebM](https://jashwanth-portfolio-ten.vercel.app/media/nira/demo.webm) · [Captions](https://jashwanth-portfolio-ten.vercel.app/media/nira/demo-captions.vtt)
+
+The full 5:40 recording exercises runtime health, offline chat, the Operations Center, persistent conversations, bounded read tools, path containment, default-deny permissions, one-time approval, evidence, and known limits. Twelve milestone frames and machine-readable metadata are retained in [demo verification](docs/demo/verification/).
 
 ## Problem and users
 
