@@ -1,135 +1,67 @@
-# NIRA Project Report
+# NIRA project report
 
-## Current Runtime Status
+## Current status
 
-NIRA currently runs through the Stage 3 autonomous entry point in [main.py](main.py). The root runtime is backed by:
+NIRA v0.5.0 is the current public release. The canonical product entry point is the installable `nira` package:
 
-- [config/settings.py](config/settings.py)
-- [config/logger.py](config/logger.py)
-- [core/platform.py](core/platform.py)
-
-Legacy packages under `nira/` remain present for compatibility, but the active Stage 3 execution path is the root-level `config/`, `core/`, and `plugins/` architecture.
-
-## Execution Transcript
-
-Command executed locally:
-
-```bash
-python main.py
+```powershell
+python -m nira
+python -m nira --console
 ```
 
-Scripted interactive session:
+The root `main.py` and root-level `config/`, `core/`, and `plugins/` tree are retained legacy Stage 3 surfaces. They are not the evidence source for the v0.5 desktop, permission, tool, memory, packaging, or release claims. `nira_agent` is a compatibility namespace for historical imports.
 
-```text
-NIRA Stage 3 interactive mode. Use /goal <task>, /metrics, /knowledge, /quit.
-You> /goal schedule calendar review for tomorrow
-NIRA> Goal complete. Prepared a calendar scheduling workflow for: schedule calendar review for tomorrow. Connect a calendar backend or plugin to execute it.
-You> /metrics
-{'counters': {'goals.executed': 1, 'agent.conversation.runs': 2, 'agent.planning.runs': 1, 'agent.automation.runs': 1}, 'timings': {}}
-You> /knowledge
-[]
-You> /quit
-```
+## Product thesis
 
-The runtime also emitted structured JSON logs for startup, agent selection, and task completion.
+NIRA is a local-first assistant runtime that separates user intent, planning, model output, and privileged tool execution. Read and NIRA-state operations are bounded; workspace writes, processes, and network access require an explicit user grant. A denial fails closed and is never automatically repaired or retried.
 
-## Main Features
+## Verified end-to-end workflow
 
-### Stage 3 Autonomous Runtime
+1. Start immediately in deterministic offline mode with no credential.
+2. Create and persist a local conversation.
+3. Plan a bounded task and inspect progress.
+4. Use contained read tools for project/file inspection.
+5. Deny a side-effecting action by default or approve it once.
+6. Inspect permission evidence, local memory, workflows, model state, tools, agents, and health in the Operations Center.
+7. Search, pin, rename, export, or delete the local session.
 
-- Multi-step goal execution via [core/autonomy/goal_executor.py](core/autonomy/goal_executor.py)
-- Task tracking via [core/autonomy/task_manager.py](core/autonomy/task_manager.py)
-- Goal planning via [core/reasoning/planner.py](core/reasoning/planner.py)
-- Agent decision routing via [core/reasoning/decision_engine.py](core/reasoning/decision_engine.py)
+The 5:40 narrated walkthrough records this current-build workflow at 1280×720. Twelve milestone frames, captions, and machine-readable verification metadata are retained under `docs/demo/verification/`.
 
-### Multi-Agent Coordination
+## Architecture and safety boundaries
 
-- Coordinator: [core/agents/coordinator.py](core/agents/coordinator.py)
-- Specialist agents: [core/agents/specialists.py](core/agents/specialists.py)
-- Agent roles:
-  - Conversation agent
-  - Planning agent
-  - Research agent
-  - Automation agent
-  - Memory/knowledge agent
+- `nira/core/` owns the canonical runtime and path controls.
+- `nira/task_graph/` plans and executes dependency-bound work.
+- `nira/tools/` registers bounded tools and access classes.
+- `nira/security/` enforces default-deny side-effect policy.
+- `nira/memory/` stores local SQLite conversations and retrieval state.
+- `nira/interface/` provides desktop, console, progress, approval, and Operations Center surfaces.
+- `nira/models/` routes deterministic and optional llama.cpp-compatible model paths.
 
-### Research System
+The canonical SQLite store is local but not encrypted. A real local-model/hardware profile, cloud fallback, hosted multi-user operation, unrestricted autonomy, and production security certification are not claimed.
 
-- Web search client: [core/research/web_search.py](core/research/web_search.py)
-- Content extraction and summarization: [core/research/content_parser.py](core/research/content_parser.py)
-- Research workflow: [core/research/research_agent.py](core/research/research_agent.py)
+## Verification evidence
 
-### Knowledge Base
+| Gate | Result |
+|---|---|
+| Automated tests | 51 passed |
+| Dependency consistency | `pip check` passed |
+| Dependency audit | `pip-audit --skip-editable` passed for the audited environment |
+| Bytecode compilation | Canonical, compatibility, and local-model packages passed |
+| Packaging | sdist and wheel built; clean-environment wheel smoke passed |
+| Secret scan | Tracked tree and full history passed the recorded Gitleaks gate |
+| Desktop evidence | Eight accepted UI states plus twelve walkthrough milestones |
+| Demo | 340.008 seconds, 1280×720 VP9/Opus, narrated and captioned |
 
-- Persistent knowledge storage: [core/knowledge/knowledge_base.py](core/knowledge/knowledge_base.py)
-- Lightweight semantic retrieval using token-hash embeddings and overlap scoring
+## Recruiter-facing interpretation
 
-### Plugins
+NIRA is strongest as an engineering case study in permission architecture, local-first state, deterministic fallback, bounded tools, packaging, and honest product evidence. It should not be presented as a verified foundation-model achievement or a production autonomous agent.
 
-- Plugin base: [plugins/base.py](plugins/base.py)
-- Plugin loader: [plugins/manager.py](plugins/manager.py)
-- Included plugins:
-  - [plugins/weather_plugin.py](plugins/weather_plugin.py)
-  - [plugins/news_plugin.py](plugins/news_plugin.py)
-  - [plugins/calendar_plugin.py](plugins/calendar_plugin.py)
+## Highest-value remaining work
 
-### Monitoring
+- Measure one supported local model and hardware profile.
+- Add memory retention, backup/restore, and corruption-recovery exercises.
+- Evaluate retrieval quality and source citations.
+- Add rich messages/attachments and broader accessibility evidence.
+- Validate desktop behavior beyond the visually audited Windows profile.
 
-- Counters and timings: [core/monitoring/metrics.py](core/monitoring/metrics.py)
-- Structured JSON logging to console and `data/cache/nira_stage3.log`
-
-## Project Structure
-
-Top-level folders currently present:
-
-```text
-config/
-core/
-data/
-desktop_app/
-local_llm/
-nira/
-nira_agent/
-nira_visual/
-plugins/
-tests/
-```
-
-Stage 3 runtime folders:
-
-```text
-config/
-core/
-plugins/
-```
-
-Legacy or auxiliary folders still present:
-
-- `nira/`
-- `nira_agent/`
-- `local_llm/`
-- `nira_visual/`
-- `desktop_app/`
-
-## Tests
-
-Focused Stage 3 tests:
-
-- [tests/test_planner.py](tests/test_planner.py)
-- [tests/test_knowledge_base.py](tests/test_knowledge_base.py)
-- [tests/test_goal_executor.py](tests/test_goal_executor.py)
-
-Command:
-
-```bash
-pytest tests/test_planner.py tests/test_knowledge_base.py tests/test_goal_executor.py
-```
-
-Status: passing.
-
-## Current Limitations
-
-- The research path depends on live network access for DuckDuckGo HTML search and page fetches.
-- Automation is currently orchestration-oriented, not a full OS executor in Stage 3.
-- Calendar, weather, and news plugins are stubs and need real backend integrations.
-- Legacy folders are still present and not yet fully consolidated into one package tree.
+See [README.md](README.md), [docs/CASE_STUDY.md](docs/CASE_STUDY.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), [docs/SECURITY_REVIEW.md](docs/SECURITY_REVIEW.md), and [docs/TEST_REPORT.md](docs/TEST_REPORT.md).

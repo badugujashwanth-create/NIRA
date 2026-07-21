@@ -1,35 +1,41 @@
-# Project Improvement Plan
+# NIRA verified state and next-value plan
 
 ## Current state
 
-NIRA is a tested local-assistant runtime with tool orchestration, permission boundaries, fallback behavior, and 32 passing tests. It is stronger than a chat wrapper, but the operator experience and environment-dependent integrations are not uniformly verified.
+NIRA v0.5 is a packaged local-assistant prototype with a cohesive desktop/console workflow, deterministic offline operation, persistent sessions, bounded tools, default-deny side effects, an integrated Operations Center, 51 tests, release evidence, and a 5:40 narrated demonstration.
 
-## Findings
+## Completed critical work
 
-- **Works:** core orchestration, local-first configuration, confirmation gates, error paths, tests, and documented CLI workflow.
-- **Does not / missing:** no polished desktop UI; local-model availability, OS tools, offline behavior, and resource use vary by machine.
-- **UX / architecture:** module boundaries are good; onboarding should make model/tool prerequisites and recovery clearer.
-- **Testing / security:** provider and OS integration smoke tests remain manual. Permissions are explicit, but an exhaustive tool abuse review is out of scope.
-- **Performance / docs / demo:** model startup and memory are not benchmarked. Documentation and video are strong; hardware-dependent behavior is the main demo blocker.
+- Selected the installable `nira` package as the canonical runtime and labelled legacy namespaces.
+- Removed ordinary-chat file mutation and enforced authorization in the tool registry.
+- Added path containment, bounded outputs, callback-failure denial, and no-repair-on-denial behavior.
+- Added session recovery, search, pin, rename, export, and deletion.
+- Integrated desktop approval/denial and read-only operational evidence instead of presentation-only agent claims.
+- Verified packaging, isolated installation, dependency consistency/audit, secret scanning, screenshots, and the current walkthrough.
 
-## Recommendations
+## Genuine remaining gaps
 
-### Critical
+### P0 before any stronger model claim
 
-- Keep all external actions behind explicit confirmation and keep unsupported providers fail-closed.
-- Verify the documented primary CLI workflow and one unavailable-model recovery path.
+- Reproduce one real local-model profile with exact model, quantization, hardware, memory, startup, latency, and failure evidence.
+- Keep unsupported model/provider paths fail-closed and visibly distinct from deterministic offline mode.
 
-### High value
+### P1 product trust and daily utility
 
-- Add repeatable resource measurements for one supported local model.
-- Add contract tests for another failure-prone tool adapter.
+- Add memory retention controls, backup/restore, corruption recovery, and migration tests.
+- Add retrieval relevance/citation evaluation and contradiction/deduplication handling.
+- Add resumable long-running tasks with crash/restart evidence.
+- Complete rich Markdown/attachment rendering and a manual keyboard/screen-reader/scaling matrix.
 
-### Optional
+### P2 only after trust work
 
-- Add a thin desktop shell only if it preserves the tested core instead of duplicating it.
+- Add bounded connectors or specialist workflows only when each has authorization, failure-path, privacy, and demonstration evidence.
+- Evaluate signed installer/update paths and another desktop platform.
 
-## Delivery constraints
+## Explicit exclusions
 
-- **Priority:** critical checks first; **complexity:** small to medium; **dependencies:** supported Python/runtime and an optional local model.
-- **Acceptance:** tests pass, startup is reproducible, a permission gate and recovery path are demonstrated, and limitations remain explicit.
-- **Excluded:** cloud accounts, autonomous unrestricted actions, paid APIs, and a broad UI rewrite.
+No hosted multi-user tenancy, unattended autonomy, medical/financial/recruiting claims, broad cloud-provider claims, or unverified agent count belongs in the current release story.
+
+## Acceptance for a future release
+
+Code, tests, documentation, screenshots, video, package artifacts, model profile, and public portfolio claims must agree. A file or legacy module does not count as a shipped capability unless it is reachable from the canonical tested path.
