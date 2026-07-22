@@ -1,117 +1,97 @@
-# NIRA Local Assistant
+# NIRA — Local-First Permissioned Assistant
 
-> A local-first Python desktop assistant that plans and remembers useful work while keeping filesystem, process, and network side effects under explicit user control.
+NIRA is a Python desktop and console assistant for work that should remain inspectable on the user's machine. It separates a request, a plan, a model response, and a privileged tool action so that “the assistant suggested it” never silently becomes “the computer executed it.”
 
-**Status:** v0.5.0 is the current release. Deterministic offline mode, persistent sessions, bounded tools, desktop permissions, the integrated Operations Center, and 51 tests are verified. A real local model is configurable but has not been verified on this machine.
+**Current release:** v0.5.0. Deterministic offline behavior, local session persistence, permission-gated tools, path containment, the Operations Center, packaging, and 51 tests are verified. A llama.cpp-compatible model can be configured, but no real model/hardware profile has been verified for this release.
 
-[Architecture](docs/ARCHITECTURE.md) · [Security review](docs/SECURITY_REVIEW.md) · [Test report](docs/TEST_REPORT.md) · [Case study](docs/CASE_STUDY.md) · [Interview guide](docs/INTERVIEW_GUIDE.md)
+[Watch the 5:40 desktop walkthrough](https://jashwanth-portfolio-ten.vercel.app/work/nira/) · [MP4](https://jashwanth-portfolio-ten.vercel.app/media/nira/demo.mp4) · [Captions](https://jashwanth-portfolio-ten.vercel.app/media/nira/demo-captions.vtt)
 
-## Demo
+## A practical workflow
 
-[![NIRA v0.5 guided desktop walkthrough](docs/demo/demo-thumbnail.png)](https://jashwanth-portfolio-ten.vercel.app/work/nira/)
+The published walkthrough uses one bounded repository-inspection task:
 
-[Open MP4](https://jashwanth-portfolio-ten.vercel.app/media/nira/demo.mp4) · [Download WebM](https://jashwanth-portfolio-ten.vercel.app/media/nira/demo.webm) · [Captions](https://jashwanth-portfolio-ten.vercel.app/media/nira/demo-captions.vtt)
+1. open NIRA in deterministic offline mode;
+2. create and retain a local conversation;
+3. ask it to inspect a selected workspace;
+4. let the read-only analyzer enumerate manifests and source types while excluding dependency/build directories;
+5. read one contained file with a bounded output size;
+6. attempt a write/process action and see the default denial;
+7. grant a one-time approval when appropriate; and
+8. inspect the permission decision and runtime health in the Operations Center.
 
-The full 5:40 recording exercises runtime health, offline chat, the Operations Center, persistent conversations, bounded read tools, path containment, default-deny permissions, one-time approval, evidence, and known limits. Twelve milestone frames and machine-readable metadata are retained in [demo verification](docs/demo/verification/).
+This is useful even without a model: the orchestration, permission, containment, memory, and failure states are real runtime behavior rather than a simulated chat transcript.
 
-## Problem and users
+## Privacy model
 
-Assistant runtimes often mix intent, model output, and privileged actions. NIRA separates those boundaries and fails closed when approval or a safe path is missing. It is for developers reviewing local-assistant architecture, privacy-conscious technical users, and engineers evaluating explicit tool authorization.
+- Conversations are stored in a local SQLite database and are not cloud-synced.
+- Interaction-training logs are off by default.
+- File operations resolve against the selected workspace root.
+- Read output is capped; project inspection skips dependency, cache, VCS, and build directories.
+- Public URL validation rejects embedded credentials and direct private/local hosts.
+- The database is not encrypted; the operating-system account and state-directory permissions remain part of the trust boundary.
 
-## Key features
+## Permission boundary
 
-- Fast, honest deterministic-offline mode.
-- Searchable, pinnable, exportable, deletable local SQLite conversations.
-- Bounded project inspection and workspace file reading.
-- Coding, research, document, and workflow task plans.
-- Explicit approval for workspace writes, processes, and network tools.
-- Visible desktop/console progress and safe failures.
-- Read-only Operations Center for agents, memory, workflows, models, tools, permissions, and system health.
-- Optional llama.cpp-compatible local endpoint routing.
-
-## Safety model
-
-| Access class | Default | Examples |
+| Action | Default | What happens |
 | --- | --- | --- |
-| Read | Allowed | project inspection, contained file read |
-| NIRA state | Allowed | conversations, generated proposal artifact |
-| Workspace write | Denied | edit file, dependency/config change |
-| Process | Denied | compile, test, build command |
-| Network | Denied | URL research, download |
+| Read contained workspace data | Allow | Tool runs with bounded output |
+| Read/write NIRA's own state | Allow | Conversation and proposal state remains local |
+| Write workspace files | Deny | Requires an explicit one-time approval |
+| Start a process or build | Deny | Requires an explicit one-time approval |
+| Use the network | Deny | Requires an explicit one-time approval |
 
-Permission is enforced in the tool registry before tool code runs. A denial is treated as a user decision and is not automatically repaired or retried.
+Authorization happens in the tool registry before tool code runs. A denied action is returned as a user decision; the planner does not retry around it. If the approval callback itself fails, the result is denial.
 
-## Architecture
-
-```mermaid
-flowchart LR
-  User --> UI[Desktop / console / CLI]
-  UI --> Runtime[AgentRuntime]
-  Runtime --> Memory[(Local SQLite)]
-  Runtime --> Graph[Task graph]
-  Graph --> Registry[Tool registry]
-  Registry --> Policy{Permission policy}
-  Policy -->|read or state| Tool[Bounded tool]
-  Policy -->|write / process / network| Approval[Approve once or deny]
-  Runtime --> Model[Optional llama.cpp adapter]
-```
-
-See [the architecture guide](docs/ARCHITECTURE.md) for canonical and legacy boundaries.
-
-## Stack and structure
-
-Python 3.11+, Tk, SQLite, requests, psutil, NumPy, pytest, setuptools, and an optional llama.cpp-compatible HTTP endpoint.
+## Runtime map
 
 ```text
-nira/core/          canonical runtime and path controls
-nira/intelligence/ intent, planning, confidence, reflection
-nira/task_graph/    dependency graph and executor
-nira/tools/         canonical tool implementations
-nira/security/      permission policy and optional legacy security
-nira/memory/        conversations and retrieval stores
-nira/interface/     Tk desktop, console, progress, notifications
-nira/models/        model registry, routing, llama.cpp adapter
-local_llm/          optional managed llama.cpp integration
-tests/              51 automated tests
-docs/               product, security, test, design, and demo evidence
+request
+  -> intent and task graph
+  -> specialist/runtime step
+  -> tool registry
+  -> permission policy
+  -> bounded tool or explicit denial
+  -> local conversation/evidence
+
+optional model path
+  -> llama.cpp-compatible endpoint
+  -> health check and model routing
+  -> deterministic fallback when unavailable
 ```
 
-## Setup
+The read-only Operations Center reports agents, memory, workflows, models, tools, permissions, and system health; it is an observability surface, not a second execution engine.
+
+## Install and run
+
+Python 3.11+ is required. Offline mode needs no credentials.
 
 ```powershell
 python -m venv .venv
-.\.venv\Scripts\python -m pip install --upgrade pip
-.\.venv\Scripts\python -m pip install -e .
-```
-
-For development and release checks:
-
-```powershell
 .\.venv\Scripts\python -m pip install -e ".[dev]"
-```
 
-## Configuration and modes
-
-No credentials are required for offline mode. [.env.example](.env.example) documents `NIRA_*` variables. Never commit model binaries, tokens, databases, or state directories.
-
-```powershell
 # Desktop or console
 .\.venv\Scripts\python -m nira
 .\.venv\Scripts\python -m nira --console
 
-# Health and two bounded tools
+# Bounded read-only checks
 .\.venv\Scripts\python -m nira --health --state-dir .\.local-state
-.\.venv\Scripts\python -m nira --status --state-dir .\.local-state
 .\.venv\Scripts\python -m nira --inspect . --workspace .
 .\.venv\Scripts\python -m nira --read-file README.md --workspace .
+```
 
-# Only when a configured endpoint is actually running
+Enable a model only after a compatible endpoint is actually running:
+
+```powershell
 .\.venv\Scripts\python -m nira --enable-local-model
 ```
 
-See [the API/CLI reference](docs/API.md) and [development guide](docs/DEVELOPMENT.md).
+Configuration is documented in [.env.example](.env.example); model files, tokens, databases, and state directories must remain untracked.
 
-## Testing and packaging
+## Failure recovery
+
+NIRA treats unavailable models, invalid paths, oversized reads, missing tool approval, and failed approval UI callbacks as explicit results. It preserves the conversation and exposes the reason instead of claiming success. Process output is captured by the build tool when the user authorizes it; a timeout or non-zero exit remains visible evidence.
+
+## Verify the release boundary
 
 ```powershell
 .\.venv\Scripts\python -m pytest -q
@@ -120,34 +100,20 @@ See [the API/CLI reference](docs/API.md) and [development guide](docs/DEVELOPMEN
 .\.venv\Scripts\python -m build
 ```
 
-Current evidence: **51 tests passed**, dependencies are consistent, and the v0.5 package, dependency, secret, and isolated-install release gates are complete.
+See [engineering decisions](docs/ENGINEERING_DECISIONS.md) for the incidents behind the permission and tool boundaries.
 
-## Privacy and security
+## Hardware and product limits
 
-- Conversation data is local SQLite and not cloud-synced.
-- Interaction-training logs are disabled by default.
-- File paths are resolved inside a selected root.
-- Public URL validation rejects credentials and direct private/local hosts.
-- Permission history is bounded in memory and excludes tool arguments.
-- The canonical database is not encrypted; protect the state directory with OS access controls.
-
-Read [SECURITY.md](SECURITY.md) and [the security review](docs/SECURITY_REVIEW.md) before enabling side effects.
-
-## Limitations
-
-- No real local model/hardware profile has been verified for v0.5.
+- No real local-model latency, memory, quality, or hardware compatibility profile is verified for v0.5.0.
 - Transcript rendering is plain text; attachments and rich Markdown are incomplete.
-- Voice, OCR, PyQt overlay, and older encrypted-memory modules are outside the core test contract.
-- Accessibility has screenshot/source evidence but no Narrator/NVDA or full scaling matrix.
-- Windows is the only visually audited desktop platform.
-- This is a local prototype, not a hosted service or unrestricted autonomous agent.
+- Voice, OCR, the PyQt overlay, and older encrypted-memory modules are outside the core contract.
+- Windows is the only visually audited desktop platform; Narrator/NVDA and a full scaling matrix remain untested.
+- NIRA is not a hosted service or an unrestricted autonomous agent.
 
-## Roadmap and contribution
+## Reference
 
-Next: model status and one verified model profile, permission timeline, memory lifecycle controls, retrieval evaluation/citations, rich messages, recovery tests, and manual accessibility evidence. See [VERSION_ROADMAP.md](docs/VERSION_ROADMAP.md) and [CONTRIBUTING.md](CONTRIBUTING.md).
-
-`nira_agent` is a compatibility namespace for historical imports. Optional legacy modules are not evidence for v0.5 completion.
+[Architecture](docs/ARCHITECTURE.md) · [Security review](docs/SECURITY_REVIEW.md) · [CLI/API](docs/API.md) · [Test report](docs/TEST_REPORT.md) · [Case study](docs/CASE_STUDY.md) · [Version roadmap](docs/VERSION_ROADMAP.md) · [Contributing](CONTRIBUTING.md)
 
 ## License status
 
-No license file is present. All rights remain with the copyright holder unless the owner makes an explicit licensing decision.
+No license file is present. All rights remain with the copyright holder until an explicit licensing decision is approved.
