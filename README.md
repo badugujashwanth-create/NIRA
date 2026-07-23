@@ -2,7 +2,7 @@
 
 NIRA is a Python desktop and console assistant for work that should remain inspectable on the user's machine. It separates a request, a plan, a model response, and a privileged tool action so that “the assistant suggested it” never silently becomes “the computer executed it.”
 
-**Current release:** v0.5.0. Deterministic offline behavior, local session persistence, permission-gated tools, path containment, the Operations Center, and packaging are verified. Ollama and llama.cpp-compatible local APIs can be configured, but no real model/hardware performance profile is claimed.
+**Current release:** v0.6.0. The connected project diagnostic, deterministic offline behavior, local session persistence, permission-gated tools, path containment, the Operations Center, and packaging are verified. Ollama and llama.cpp-compatible local APIs can be configured, but no real model/hardware performance profile is claimed.
 
 [Watch the 5:40 desktop walkthrough](https://jashwanth-portfolio-ten.vercel.app/work/nira/) · [MP4](https://jashwanth-portfolio-ten.vercel.app/media/nira/demo.mp4) · [Captions](https://jashwanth-portfolio-ten.vercel.app/media/nira/demo-captions.vtt)
 
