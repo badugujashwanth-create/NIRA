@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.6.0] - 2026-07-23
+
+### Added
+
+- Connected project diagnostic from folder selection through safe inspection, bounded search, explicit permission, allowlisted execution, verification, cancellation/retry, and local session recovery.
+- Native Ollama API availability, chat, and embedding support with a clear deterministic-offline fallback.
+
+### Changed
+
+- Process tools now accept fixed diagnostic profiles and reject arbitrary command strings.
+- The desktop interface exposes project selection, diagnostic progress, cancellation, evidence, and recovery controls.
+- Verification coverage increased to 57 automated tests.
+
 ## [0.5.0] - 2026-07-19
 
 ### Added
@@ -42,5 +55,6 @@
 
 - Portfolio baseline with 32 tests, initial docs, and terminal demo.
 
+[0.6.0]: https://github.com/badugujashwanth-create/NIRA/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/badugujashwanth-create/NIRA/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/badugujashwanth-create/NIRA/compare/v0.3.0...v0.4.0
