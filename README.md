@@ -2,7 +2,7 @@
 
 NIRA is a Python desktop and console assistant for work that should remain inspectable on the user's machine. It separates a request, a plan, a model response, and a privileged tool action so that “the assistant suggested it” never silently becomes “the computer executed it.”
 
-**Current release:** v0.5.0. Deterministic offline behavior, local session persistence, permission-gated tools, path containment, the Operations Center, packaging, and 51 tests are verified. A llama.cpp-compatible model can be configured, but no real model/hardware profile has been verified for this release.
+**Current release:** v0.5.0. Deterministic offline behavior, local session persistence, permission-gated tools, path containment, the Operations Center, and packaging are verified. Ollama and llama.cpp-compatible local APIs can be configured, but no real model/hardware performance profile is claimed.
 
 [Watch the 5:40 desktop walkthrough](https://jashwanth-portfolio-ten.vercel.app/work/nira/) · [MP4](https://jashwanth-portfolio-ten.vercel.app/media/nira/demo.mp4) · [Captions](https://jashwanth-portfolio-ten.vercel.app/media/nira/demo-captions.vtt)
 
@@ -14,10 +14,11 @@ The published walkthrough uses one bounded repository-inspection task:
 2. create and retain a local conversation;
 3. ask it to inspect a selected workspace;
 4. let the read-only analyzer enumerate manifests and source types while excluding dependency/build directories;
-5. read one contained file with a bounded output size;
-6. attempt a write/process action and see the default denial;
-7. grant a one-time approval when appropriate; and
-8. inspect the permission decision and runtime health in the Operations Center.
+5. run a bounded text search for real diagnostic evidence;
+6. review the requested action, reason, target, expected effect, and risk;
+7. approve one fixed diagnostic profile, or reject it and retry later;
+8. verify the captured exit code and evidence; and
+9. restore, rename, export, or delete the locally preserved session.
 
 This is useful even without a model: the orchestration, permission, containment, memory, and failure states are real runtime behavior rather than a simulated chat transcript.
 
@@ -77,12 +78,17 @@ python -m venv .venv
 .\.venv\Scripts\python -m nira --health --state-dir .\.local-state
 .\.venv\Scripts\python -m nira --inspect . --workspace .
 .\.venv\Scripts\python -m nira --read-file README.md --workspace .
+.\.venv\Scripts\python -m nira --search TODO --workspace .
+.\.venv\Scripts\python -m nira --diagnose TODO --workspace . --allow-execute
 ```
 
 Enable a model only after a compatible endpoint is actually running:
 
 ```powershell
 .\.venv\Scripts\python -m nira --enable-local-model
+
+# Or use the local Ollama API. Override NIRA_OLLAMA_MODEL when needed.
+.\.venv\Scripts\python -m nira --enable-ollama
 ```
 
 Configuration is documented in [.env.example](.env.example); model files, tokens, databases, and state directories must remain untracked.
@@ -104,7 +110,7 @@ See [engineering decisions](docs/ENGINEERING_DECISIONS.md) for the incidents beh
 
 ## Hardware and product limits
 
-- No real local-model latency, memory, quality, or hardware compatibility profile is verified for v0.5.0.
+- No real local-model latency, memory, quality, or hardware compatibility profile is verified for the current release.
 - Transcript rendering is plain text; attachments and rich Markdown are incomplete.
 - Voice, OCR, the PyQt overlay, and older encrypted-memory modules are outside the core contract.
 - Windows is the only visually audited desktop platform; Narrator/NVDA and a full scaling matrix remain untested.

@@ -8,6 +8,7 @@ from nira.tools.build_runner import BuildRunner
 from nira.tools.dependency_manager import DependencyManager
 from nira.tools.file_manager import FileManager, UpdateConfigTool
 from nira.tools.project_analyzer import ProjectAnalyzer
+from nira.tools.workspace_search import WorkspaceSearch
 
 
 class DummyState:
@@ -85,10 +86,32 @@ class ToolTests(unittest.TestCase):
             self.assertEqual(result.data["python_files"], 1)
             self.assertEqual(result.data["languages"], {"Python": 1})
 
-    def test_build_runner_executes_command(self) -> None:
-        result = BuildRunner(timeout_sec=10).run({"command": "python -c \"print('ok')\""}, DummyState(Path.cwd()))
+    def test_build_runner_executes_allowlisted_profile(self) -> None:
+        result = BuildRunner(timeout_sec=10).run({"profile": "python_compile"}, DummyState(Path.cwd()))
         self.assertTrue(result.ok)
-        self.assertIn("ok", result.output)
+        self.assertTrue(result.data["verified"])
+
+    def test_build_runner_rejects_arbitrary_command(self) -> None:
+        result = BuildRunner(timeout_sec=10).run(
+            {"profile": "shell", "command": "python -c \"print('unsafe')\""},
+            DummyState(Path.cwd()),
+        )
+        self.assertFalse(result.ok)
+        self.assertFalse(result.data["arbitrary_commands_allowed"])
+
+    def test_workspace_search_is_bounded_and_excludes_dependencies(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "app.py").write_text("# TODO: verify this\n", encoding="utf-8")
+            (root / "node_modules").mkdir()
+            (root / "node_modules" / "hidden.js").write_text("// TODO hidden\n", encoding="utf-8")
+            result = WorkspaceSearch().run(
+                {"query": "TODO", "max_matches": 5},
+                DummyState(root),
+            )
+            self.assertTrue(result.ok)
+            self.assertEqual(result.data["match_count"], 1)
+            self.assertEqual(result.data["matches"][0]["path"], "app.py")
 
 
 if __name__ == "__main__":

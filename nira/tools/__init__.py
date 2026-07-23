@@ -9,6 +9,7 @@ from nira.tools.download_manager import DownloadManager
 from nira.tools.file_manager import FileManager, UpdateConfigTool
 from nira.tools.project_analyzer import ProjectAnalyzer
 from nira.tools.registry import ToolRegistry
+from nira.tools.workspace_search import WorkspaceSearch
 from nira.tools.research_tools import (
     AnalyzeSourcesTool,
     GenerateResearchReportTool,
@@ -35,6 +36,7 @@ def build_default_registry(
     registry = ToolRegistry(permission_policy=permission_policy)
     registry.register(FileManager())
     registry.register(ProjectAnalyzer())
+    registry.register(WorkspaceSearch())
     registry.register(DependencyManager())
     registry.register(UpdateConfigTool())
     registry.register(CodeGenerator(model=model))

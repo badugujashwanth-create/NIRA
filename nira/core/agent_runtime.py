@@ -5,7 +5,7 @@ import time
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
-from threading import RLock
+from threading import Event, RLock
 from typing import Any, Callable
 
 from nira.agents import CodingAgent, DocumentAgent, EmotionAgent, PlannerAgent, ResearchAgent, SafetyAgent
@@ -43,6 +43,7 @@ from nira.training.interaction_logger import InteractionLogger
 from nira.workflows.pattern_detector import PatternDetector
 from nira.workflows.workflow_engine import WorkflowEngine
 from nira.workflows.workflow_registry import WorkflowRegistry
+from nira.workflows.project_diagnostic import ProjectDiagnosticReport, ProjectDiagnosticWorkflow
 
 
 @dataclass
@@ -83,6 +84,8 @@ class AgentRuntime:
     ) -> None:
         self.config = config
         self.model = model
+        self._workspace_root = Path.cwd().resolve()
+        self._diagnostic_cancel_event = Event()
         self.intent_analyzer = IntentAnalyzer()
         self.short_term_memory = ShortTermMemory(max_turns=config.max_short_term_turns)
         self.conversation_store = ConversationStore(config.database_path)
@@ -157,6 +160,7 @@ class AgentRuntime:
             permission_policy=permission_policy,
         )
         self.task_executor = TaskGraphExecutor(self.tool_registry, self.reflection_engine)
+        self.project_diagnostic_workflow = ProjectDiagnosticWorkflow(self.tool_registry)
         self._status_listeners: list[RuntimeListener] = []
         self._activity_lock = RLock()
         self._agent_activity: dict[str, dict[str, str]] = {}
@@ -274,7 +278,8 @@ class AgentRuntime:
             "status": "ready",
             "mode": "local-model" if self.config.local_model_enabled else "deterministic-offline",
             "local_model_enabled": self.config.local_model_enabled,
-            "workspace": str(Path.cwd()),
+            "model_availability": self.model_manager.availability(),
+            "workspace": str(self._workspace_root),
             "state_directory": str(self.config.base_dir),
             "database_ready": self.config.database_path.exists(),
             "tools": self.tool_registry.list_tools(),
@@ -316,6 +321,7 @@ class AgentRuntime:
             "models": {
                 "routes": self.model_registry.to_mapping(),
                 "runtime": self.model_manager.stats(),
+                "availability": self.model_manager.availability(),
                 "cache_limit": self.config.max_cached_models,
                 "idle_ttl_seconds": self.config.model_idle_ttl_sec,
             },
@@ -343,10 +349,98 @@ class AgentRuntime:
     def inspect_project(self, path: str = ".") -> ToolResult:
         return self._run_bounded_read_tool("analyze_project", {"path": path})
 
+    def select_workspace(self, path: Path | str) -> Path:
+        selected = Path(path).expanduser().resolve()
+        if not selected.is_dir():
+            raise NotADirectoryError(selected)
+        self._workspace_root = selected
+        return selected
+
     def read_workspace_file(self, path: str, max_bytes: int = 65_536) -> ToolResult:
         return self._run_bounded_read_tool(
             "file_manager",
             {"action": "read", "path": path, "max_bytes": max_bytes},
+        )
+
+    def search_workspace(self, query: str, path: str = ".") -> ToolResult:
+        return self._run_bounded_read_tool(
+            "search_workspace",
+            {"query": query, "path": path},
+        )
+
+    def run_project_diagnostic(
+        self,
+        query: str = "TODO",
+        *,
+        profile: str = "python_compile",
+    ) -> ProjectDiagnosticReport:
+        body = query.strip() or "TODO"
+        self._diagnostic_cancel_event.clear()
+        state = AgentState(
+            user_input=f"Diagnose project for {body}",
+            context={
+                "cwd": str(self._workspace_root),
+                "active_project": self._workspace_root.name,
+                "cancel_event": self._diagnostic_cancel_event,
+            },
+        )
+        self.conversation_store.add_message(
+            self.current_conversation.conversation_id,
+            "user",
+            f"Run a bounded project diagnostic for {body!r} in {self._workspace_root.name}.",
+        )
+
+        def progress(event) -> None:
+            self._emit_status(
+                "diagnostic_progress",
+                event.message,
+                payload=event.to_dict(),
+            )
+
+        report = self.project_diagnostic_workflow.run(
+            workspace=str(self._workspace_root),
+            query=body,
+            profile=profile,
+            state=state,
+            cancel_event=self._diagnostic_cancel_event,
+            progress_callback=progress,
+        )
+        report.session_id = self.current_conversation.conversation_id
+        outcome = "verified" if report.ok else ("cancelled" if report.cancelled else "stopped")
+        summary = (
+            f"Project diagnostic {outcome}. "
+            f"Inspection files={report.inspection.get('data', {}).get('source_files', 0)}; "
+            f"search matches={report.search.get('data', {}).get('match_count', 0)}; "
+            f"profile={profile}; "
+            f"permission={report.permission.get('reason', 'not reached')}."
+        )
+        self.short_term_memory.add_turn("assistant", summary)
+        self.conversation_store.add_message(
+            self.current_conversation.conversation_id,
+            "assistant",
+            summary,
+        )
+        self._refresh_current_conversation()
+        self._emit_status(
+            "diagnostic_completed",
+            summary,
+            payload={"report": report.to_dict()},
+        )
+        return report
+
+    def retry_project_diagnostic(
+        self,
+        query: str = "TODO",
+        *,
+        profile: str = "python_compile",
+    ) -> ProjectDiagnosticReport:
+        return self.run_project_diagnostic(query, profile=profile)
+
+    def cancel_project_diagnostic(self) -> None:
+        self._diagnostic_cancel_event.set()
+        self._emit_status(
+            "diagnostic_cancel_requested",
+            "Cancellation requested; NIRA will stop before the next tool starts.",
         )
 
     def recent_permission_decisions(self, limit: int = 20) -> list[dict[str, object]]:
@@ -405,7 +499,7 @@ class AgentRuntime:
             self.short_term_memory.add_turn(message.role, message.content)
 
     def _run_bounded_read_tool(self, tool_name: str, args: dict[str, Any]) -> ToolResult:
-        state = AgentState(context={"cwd": str(Path.cwd())})
+        state = AgentState(context={"cwd": str(self._workspace_root)})
         return self.tool_registry.execute(tool_name, args, state)
 
     def _collect_memory_hits(self, user_input: str, intent: IntentResult) -> dict[str, Any]:
@@ -419,7 +513,7 @@ class AgentRuntime:
         }
 
     def _build_context(self, intent: IntentResult, memory_hits: dict[str, Any]) -> dict[str, Any]:
-        cwd = Path.cwd()
+        cwd = self._workspace_root
         manifests = [
             name
             for name in (

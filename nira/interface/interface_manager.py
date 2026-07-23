@@ -197,7 +197,7 @@ class InterfaceManager:
         decisions = self.runtime.recent_permission_decisions()
         self.chat.display_system_message(
             "Engineering evidence from this release candidate:\n"
-            "• 51 automated tests passed\n"
+            "• 57 automated tests passed\n"
             "• dependency audit: no known vulnerabilities\n"
             "• tracked tree and full Git history: no secrets found\n"
             "• v0.5 wheel installed and reported healthy outside the source tree\n"

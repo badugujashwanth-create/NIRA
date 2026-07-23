@@ -122,6 +122,23 @@ class ModelManager:
             "enabled": self.enabled,
         }
 
+    def availability(self) -> dict[str, object]:
+        if not self.enabled:
+            return {
+                "available": False,
+                "provider": "offline",
+                "reason": "local_model_disabled",
+            }
+        model = self.load_model("fast_model")
+        if hasattr(model, "availability"):
+            return dict(model.availability())
+        ready = bool(model.is_ready()) if hasattr(model, "is_ready") else True
+        return {
+            "available": ready,
+            "provider": type(model).__name__,
+            "model_available": ready,
+        }
+
     def _trim_cache(self) -> None:
         non_external = [item for item in self._loaded.items() if not item[1].external]
         if len(non_external) <= self.max_cached_models:
