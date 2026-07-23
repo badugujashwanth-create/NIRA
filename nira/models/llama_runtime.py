@@ -67,7 +67,7 @@ class LocalModel:
                 self._server = None
 
     def is_ready(self) -> bool:
-        for endpoint in ("/health", "/v1/models"):
+        for endpoint in ("/health", "/v1/models", "/api/tags"):
             try:
                 response = self._session.get(f"{self.base_url}{endpoint}", timeout=3)
                 if response.status_code == 200:
@@ -83,6 +83,9 @@ class LocalModel:
         result = self._chat(prompt)
         if result.text:
             return result
+        ollama = self._ollama_chat(prompt)
+        if ollama.text:
+            return ollama
         completion = self._completion(prompt)
         if completion.text:
             return completion
@@ -95,6 +98,7 @@ class LocalModel:
         for path, payload in (
             ("/v1/embeddings", {"input": text}),
             ("/embedding", {"content": text}),
+            ("/api/embed", {"input": text}),
         ):
             if self.model:
                 payload["model"] = self.model
@@ -108,9 +112,41 @@ class LocalModel:
                 if "embedding" in data:
                     embedding = [float(value) for value in data.get("embedding", [])]
                     return embedding or None
+                if "embeddings" in data and data["embeddings"]:
+                    embedding = [float(value) for value in data["embeddings"][0]]
+                    return embedding or None
             except requests.RequestException:
                 continue
         return None
+
+    def availability(self) -> dict[str, Any]:
+        """Report local model availability without contacting a remote host."""
+        try:
+            response = self._session.get(f"{self.base_url}/api/tags", timeout=3)
+            if response.status_code == 200:
+                payload = response.json()
+                models = [
+                    str(item.get("name", ""))
+                    for item in payload.get("models", [])
+                    if isinstance(item, dict) and item.get("name")
+                ]
+                return {
+                    "available": True,
+                    "provider": "ollama",
+                    "configured_model": self.model,
+                    "model_available": bool(self.model and self.model in models),
+                    "models": models,
+                }
+        except (requests.RequestException, ValueError):
+            pass
+        ready = self.is_ready()
+        return {
+            "available": ready,
+            "provider": "openai-compatible",
+            "configured_model": self.model,
+            "model_available": ready,
+            "models": [],
+        }
 
     def _chat(self, prompt: str) -> ModelResponse:
         payload = {
@@ -151,3 +187,25 @@ class LocalModel:
             return ModelResponse(text=text, provider=f"llama.cpp:{self.model or 'default'}", raw=data)
         except requests.RequestException as exc:
             return ModelResponse(text="", provider=f"llama.cpp:{self.model or 'default'}", raw={"error": str(exc)})
+
+    def _ollama_chat(self, prompt: str) -> ModelResponse:
+        if not self.model:
+            return ModelResponse(text="", provider="ollama", raw={"error": "model is not configured"})
+        payload = {
+            "model": self.model,
+            "messages": [{"role": "user", "content": prompt}],
+            "stream": False,
+            "options": {"temperature": 0.2, "num_predict": self.max_tokens},
+        }
+        try:
+            response = self._session.post(
+                f"{self.base_url}/api/chat",
+                json=payload,
+                timeout=(3, self._request_timeout),
+            )
+            response.raise_for_status()
+            data = response.json()
+            text = str(data.get("message", {}).get("content", "")).strip()
+            return ModelResponse(text=text, provider=f"ollama:{self.model}", raw=data)
+        except requests.RequestException as exc:
+            return ModelResponse(text="", provider=f"ollama:{self.model}", raw={"error": str(exc)})

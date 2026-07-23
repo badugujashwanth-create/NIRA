@@ -70,3 +70,34 @@ def test_status_command_reports_integrated_product_snapshot(tmp_path, capsys) ->
     assert payload["workflows"]["template_count"] >= 1
     assert payload["tools"]["count"] >= 1
     assert any(agent["name"] == "Safety" for agent in payload["agents"])
+
+
+def test_search_and_diagnostic_commands_use_bounded_workflow(tmp_path, capsys) -> None:
+    workspace = tmp_path / "project"
+    workspace.mkdir()
+    (workspace / "pyproject.toml").write_text("[project]\nname='demo'\n", encoding="utf-8")
+    (workspace / "hello.py").write_text("# TODO: add a test\nprint('hello')\n", encoding="utf-8")
+    state = tmp_path / "state"
+
+    search_code = main(
+        ["--search", "TODO", "--workspace", str(workspace), "--state-dir", str(state)]
+    )
+    searched = json.loads(capsys.readouterr().out)
+    assert search_code == 0
+    assert searched["data"]["match_count"] == 1
+
+    diagnostic_code = main(
+        [
+            "--diagnose",
+            "TODO",
+            "--workspace",
+            str(workspace),
+            "--state-dir",
+            str(state),
+            "--allow-execute",
+        ]
+    )
+    diagnosed = json.loads(capsys.readouterr().out)
+    assert diagnostic_code == 0
+    assert diagnosed["verification"]["verified"] is True
+    assert diagnosed["permission"]["reason"] == "allowed_by_policy"

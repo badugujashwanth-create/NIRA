@@ -48,12 +48,31 @@ def build_parser() -> argparse.ArgumentParser:
         help="Inspect a project path inside the workspace with the read-only analyzer.",
     )
     action.add_argument("--read-file", metavar="PATH", help="Read up to 64 KiB from a file inside the workspace.")
+    action.add_argument("--search", metavar="TEXT", help="Run a bounded text search inside the workspace.")
+    action.add_argument(
+        "--diagnose",
+        nargs="?",
+        const="TODO",
+        metavar="TEXT",
+        help="Inspect, search, request approval, run an allowlisted diagnostic, and verify the result.",
+    )
     parser.add_argument("--workspace", type=Path, help="Bound project tools to this existing directory.")
     parser.add_argument("--state-dir", type=Path, help="Store NIRA's local state in this directory.")
     parser.add_argument(
         "--enable-local-model",
         action="store_true",
         help="Enable the configured local llama.cpp endpoint. Disabled by default for fast offline behavior.",
+    )
+    parser.add_argument(
+        "--enable-ollama",
+        action="store_true",
+        help="Use a local Ollama API at NIRA_OLLAMA_BASE_URL (default http://127.0.0.1:11434).",
+    )
+    parser.add_argument(
+        "--diagnostic-profile",
+        choices=("python_compile", "python_tests"),
+        default="python_compile",
+        help="Allowlisted profile used by --diagnose.",
     )
     parser.add_argument("--allow-write", action="store_true", help="Allow workspace-write tools for this process.")
     parser.add_argument("--allow-execute", action="store_true", help="Allow local process execution for this process.")
@@ -69,6 +88,10 @@ def build_runtime(args: argparse.Namespace | None = None) -> AgentRuntime:
         config.__post_init__()
     if args.enable_local_model:
         config.local_model_enabled = True
+    if args.enable_ollama:
+        config.local_model_enabled = True
+        config.llama_base_url = os.getenv("NIRA_OLLAMA_BASE_URL", "http://127.0.0.1:11434")
+        config.llama_model = os.getenv("NIRA_OLLAMA_MODEL", "llama3.2:3b")
 
     policy = ToolPermissionPolicy()
     grants: list[ToolAccess] = []
@@ -110,6 +133,17 @@ def main(argv: list[str] | None = None) -> int:
             result = runtime.read_workspace_file(args.read_file)
             print(json.dumps(result.to_dict(), indent=2, sort_keys=True))
             return 0 if result.ok else 2
+        if args.search is not None:
+            result = runtime.search_workspace(args.search)
+            print(json.dumps(result.to_dict(), indent=2, sort_keys=True))
+            return 0 if result.ok else 2
+        if args.diagnose is not None:
+            report = runtime.run_project_diagnostic(
+                args.diagnose,
+                profile=args.diagnostic_profile,
+            )
+            print(json.dumps(report.to_dict(), indent=2, sort_keys=True))
+            return 0 if report.ok else 2
         if args.prompt is not None:
             response = runtime.handle(args.prompt)
             print(response.text)

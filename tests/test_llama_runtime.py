@@ -15,7 +15,7 @@ class FakeResponse:
 
     def raise_for_status(self):
         if self.status_code >= 400:
-            raise RuntimeError("http error")
+            raise requests.HTTPError("http error")
 
     def json(self):
         return self._payload
@@ -35,6 +35,21 @@ class FakeSession:
         if url.endswith("/v1/embeddings"):
             return FakeResponse(200, {"data": [{"embedding": [1.0, 2.0]}]})
         return FakeResponse(200, {"content": "fallback"})
+
+class FakeOllamaSession:
+    def get(self, url, timeout=0):
+        if url.endswith("/api/tags"):
+            return FakeResponse(200, {"models": [{"name": "gemma3"}]})
+        return FakeResponse(404)
+
+    def post(self, url, json=None, timeout=0):
+        if url.endswith("/v1/chat/completions"):
+            return FakeResponse(404)
+        if url.endswith("/api/chat"):
+            return FakeResponse(200, {"message": {"content": "local ollama response"}})
+        if url.endswith("/api/embed"):
+            return FakeResponse(200, {"embeddings": [[0.1, 0.2]]})
+        return FakeResponse(404)
 
 
 class LlamaRuntimeTests(unittest.TestCase):
@@ -63,10 +78,23 @@ class LlamaRuntimeTests(unittest.TestCase):
             model._session.get.side_effect = [
                 requests.RequestException("down"),
                 requests.RequestException("down"),
+                requests.RequestException("down"),
             ]
             instance.start.return_value = None
             model.start()
             instance.start.assert_called_once()
+
+    def test_ollama_availability_generation_and_embedding(self) -> None:
+        model = LocalModel(base_url="http://127.0.0.1:11434", model="gemma3")
+        model._session = FakeOllamaSession()
+        status = model.availability()
+        response = model.generate("test")
+        embedding = model.embed_text("test")
+        self.assertTrue(status["available"])
+        self.assertTrue(status["model_available"])
+        self.assertEqual(response.provider, "ollama:gemma3")
+        self.assertEqual(response.text, "local ollama response")
+        self.assertEqual(embedding, [0.1, 0.2])
 
 
 if __name__ == "__main__":

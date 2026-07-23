@@ -41,6 +41,7 @@ class ChatInterface:
         self._entry = None
         self._status_var = None
         self._conversation_title_var = None
+        self._workspace_var = None
         self.demo_mode = False
         self.demo_permission_decisions: list[bool] = [False]
         self.demo_permission_delay_ms = 6000
@@ -107,6 +108,16 @@ class ChatInterface:
             fg="#94a3b8",
             font=("Segoe UI", 10),
         ).pack(side="right", pady=(10, 0))
+        self._workspace_var = tk.StringVar(
+            value=f"Project: {Path(self.manager.runtime.health()['workspace']).name}"
+        )
+        tk.Label(
+            header,
+            textvariable=self._workspace_var,
+            bg="#08111b",
+            fg="#a7f3d0",
+            font=("Segoe UI", 9, "bold"),
+        ).pack(side="right", padx=(0, 12), pady=(10, 0))
         tk.Button(
             header,
             text="Privacy",
@@ -182,6 +193,34 @@ class ChatInterface:
             pady=5,
             font=("Segoe UI", 9, "bold"),
         ).pack(side="right")
+        tk.Button(
+            conversation_toolbar,
+            text="Select project",
+            command=self._select_project_folder,
+            bg="#1e293b",
+            fg="#a7f3d0",
+            activebackground="#334155",
+            activeforeground="#ecfdf5",
+            relief="flat",
+            bd=0,
+            padx=10,
+            pady=5,
+            font=("Segoe UI", 9, "bold"),
+        ).pack(side="right", padx=(0, 8))
+        tk.Button(
+            conversation_toolbar,
+            text="Run diagnostic",
+            command=self._run_project_diagnostic,
+            bg="#164e63",
+            fg="#cffafe",
+            activebackground="#155e75",
+            activeforeground="#ecfeff",
+            relief="flat",
+            bd=0,
+            padx=10,
+            pady=5,
+            font=("Segoe UI", 9, "bold"),
+        ).pack(side="right", padx=(0, 8))
         self._conversation = scrolledtext.ScrolledText(
             conversation_card,
             wrap="word",
@@ -294,6 +333,18 @@ class ChatInterface:
             pady=10,
             font=("Segoe UI", 10, "bold"),
         ).pack(side="left", padx=(10, 0))
+        tk.Button(
+            footer,
+            text="Cancel task",
+            command=self._cancel_project_diagnostic,
+            bg="#3f1d2e",
+            fg="#fecdd3",
+            relief="flat",
+            bd=0,
+            padx=14,
+            pady=10,
+            font=("Segoe UI", 9, "bold"),
+        ).pack(side="left", padx=(10, 0))
 
         root.protocol("WM_DELETE_WINDOW", self.manager.shutdown)
         root.bind("<Control-n>", lambda _event: self._start_new_conversation())
@@ -349,7 +400,8 @@ class ChatInterface:
             print(
                 "Commands: /health, /new [title], /sessions, /use <id>, /search <text>, "
                 "/pin [id], /unpin [id], /rename <title>, /export <path>, /delete <id>, "
-                "/inspect [path], /read <path>, /permissions, /privacy, /voice, /exit"
+                "/inspect [path], /find <text>, /read <path>, /diagnose [text], /cancel, "
+                "/permissions, /privacy, /voice, /exit"
             )
             return True
         if name == "/health":
@@ -435,6 +487,20 @@ class ChatInterface:
                 return True
             print(runtime.read_workspace_file(value).output)
             return True
+        if name == "/find":
+            if not value:
+                print("Usage: /find <text>")
+                return True
+            print(runtime.search_workspace(value).output)
+            return True
+        if name == "/diagnose":
+            report = runtime.run_project_diagnostic(value or "TODO")
+            print(self._render_diagnostic_report(report.to_dict()))
+            return True
+        if name == "/cancel":
+            runtime.cancel_project_diagnostic()
+            print("Cancellation requested.")
+            return True
         if name == "/permissions":
             decisions = runtime.recent_permission_decisions()
             if not decisions:
@@ -471,14 +537,28 @@ class ChatInterface:
         visible = {
             key: value
             for key, value in args.items()
-            if key in {"action", "path", "cwd", "command", "source", "destination", "query"}
+            if key
+            in {
+                "action",
+                "path",
+                "cwd",
+                "profile",
+                "requested_action",
+                "reason",
+                "target",
+                "expected_effect",
+                "risk",
+                "source",
+                "destination",
+                "query",
+            }
         }
         access_name = getattr(access, "value", str(access))
 
         def ask() -> None:
             dialog = tk.Toplevel(self.root)
             dialog.title("Nira permission request")
-            self._center_dialog(dialog, 540, 360)
+            self._center_dialog(dialog, 580, 540)
             dialog.resizable(False, False)
             dialog.configure(bg="#08111b")
             dialog.transient(self.root)
@@ -587,6 +667,100 @@ class ChatInterface:
 
         self.root.after(0, ask)
         return completed.wait(timeout=120) and decision["allowed"]
+
+    def _select_project_folder(self) -> None:
+        if self.root is None or filedialog is None:
+            return
+        selected = filedialog.askdirectory(
+            parent=self.root,
+            title="Select a software project",
+            mustexist=True,
+        )
+        if not selected:
+            return
+        try:
+            workspace = self.manager.runtime.select_workspace(Path(selected))
+        except (NotADirectoryError, OSError) as exc:
+            if messagebox is not None:
+                messagebox.showerror("Project selection failed", str(exc), parent=self.root)
+            return
+        if self._workspace_var is not None:
+            self._workspace_var.set(f"Project: {workspace.name}")
+        self._set_text_widget(
+            self._context,
+            f"Project: {workspace}\n"
+            + ("Mode: Local model" if self.manager.runtime.config.local_model_enabled else "Mode: Deterministic offline")
+            + "\nStorage: Local only\nSide effects: Approval required",
+        )
+        self.display_system_message(
+            f"Selected project: {workspace.name}\n"
+            "Nira will contain reads, searches, and approved diagnostics to this folder."
+        )
+        self.display_status("Project selected.")
+
+    def _run_project_diagnostic(self) -> None:
+        if self.root is None:
+            return
+        query = "TODO"
+        if simpledialog is not None:
+            value = simpledialog.askstring(
+                "Bounded project diagnostic",
+                "Text to search before verification:",
+                initialvalue=query,
+                parent=self.root,
+            )
+            if value is None:
+                return
+            query = value.strip() or query
+        self.display_task_progress(
+            "Plan\n"
+            "[pending] Inspect project\n"
+            f"[pending] Search for {query!r}\n"
+            "[pending] Request diagnostic permission\n"
+            "[pending] Run allowlisted diagnostic\n"
+            "[pending] Verify and preserve result"
+        )
+        self.display_status("Starting bounded project diagnostic...")
+
+        def worker() -> None:
+            report = self.manager.runtime.run_project_diagnostic(query)
+            self._queue.put(("diagnostic_report", report.to_dict()))
+
+        import threading
+
+        threading.Thread(target=worker, daemon=True).start()
+
+    def _cancel_project_diagnostic(self) -> None:
+        self.manager.runtime.cancel_project_diagnostic()
+        self.display_status("Cancellation requested.")
+
+    @staticmethod
+    def _render_diagnostic_report(report: dict[str, Any]) -> str:
+        inspection = report.get("inspection", {}).get("data", {})
+        search = report.get("search", {}).get("data", {})
+        verification = report.get("verification", {})
+        permission = report.get("permission", {})
+        timeline = report.get("timeline", [])
+        lines = [
+            f"Project diagnostic: {'VERIFIED' if report.get('ok') else 'STOPPED'}",
+            f"Workspace: {report.get('workspace', '')}",
+            f"Source files: {inspection.get('source_files', 0)}",
+            f"Search matches: {search.get('match_count', 0)}",
+            f"Permission: {permission.get('reason', 'not reached')}",
+            f"Verification: {verification.get('verified', False)}",
+            f"Session: {report.get('session_id', '')}",
+            "",
+            "Tool timeline:",
+        ]
+        lines.extend(
+            f"[{item.get('status', '')}] {item.get('stage', '')}: {item.get('message', '')}"
+            for item in timeline
+        )
+        if report.get("recoverable"):
+            lines.extend(
+                ("", "This result is recoverable. Review the failure, then run the diagnostic again.")
+            )
+        return "\n".join(lines)
 
     def _start_new_conversation(self) -> None:
         self.manager.runtime.new_conversation()
@@ -957,6 +1131,19 @@ class ChatInterface:
         if kind == "notification":
             title, message, level = payload
             self._set_status(f"{title}: {message}" if level in {"warning", "error"} else message)
+            return
+        if kind == "diagnostic_report":
+            rendered = self._render_diagnostic_report(dict(payload))
+            self._append_message("Nira", rendered)
+            timeline = payload.get("timeline", [])
+            self._set_text_widget(
+                self._progress,
+                "\n".join(
+                    f"[{item.get('status', '')}] {item.get('stage', '')}"
+                    for item in timeline
+                ),
+            )
+            self._set_status("Diagnostic verified." if payload.get("ok") else "Diagnostic stopped; retry is available.")
 
     def _append_message(self, speaker: str, text: str) -> None:
         line = f"{speaker}: {text}".strip()
